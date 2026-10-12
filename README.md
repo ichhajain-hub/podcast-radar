@@ -5,7 +5,8 @@
 Every Monday before 7:30 AM IST, this app emails a podcast host a one-page radar built from the
 last week of **live** podcast data:
 
-- **Book this week**: guests doing the rounds on 2+ Indian business podcasts.
+- **Book this week**: the strongest guests to book (founders ahead of the curve), plus a **Doing media rounds** block
+  listing every guest on 2+ monitored Indian shows in the same 30 days.
 - **Topics to ride or counter**: themes several Indian shows covered this week.
 - **Global signals · for inspiration**: themes trending on global shows that India hasn't picked up yet.
 - **Sponsors to pitch**: brands buying spoken ad reads, including timestamped reads found by watching the YouTube video.
@@ -43,8 +44,10 @@ for queued India videos, 2 at a time, while time remains (the rest wait for the 
 and in **weekly** mode writes, stores and emails the brief. A show whose feed fails is recorded in
 `runs.shows_failed` and named in the brief; the run carries on.
 
-**Schedule (`vercel.json`):** daily `0 0 * * *` (5:30 AM IST) refreshes the dashboard, with no email.
-Weekly `0 1 * * 1` (Monday 6:30 AM IST) writes and sends the brief.
+**Schedule (`vercel.json`):** daily `0 0 * * 0,2-6` (5:30 AM IST, Tue–Sun) refreshes the dashboard, with no email.
+Weekly `0 0 * * 1` (Monday 5:30 AM IST) refreshes and also writes and sends the brief. Vercel Hobby crons can fire
+anywhere in the scheduled hour and a run takes about 5 minutes, so the latest arrival is about 6:35 AM IST, safely before
+7:30. (Firing the weekly job at 01:00 UTC, as first planned, could have landed after 7:30.)
 
 ---
 

@@ -72,6 +72,8 @@ export type ScoreResult = {
   from: string;
   to: string;
   guests: GuestItem[];
+  /** Guests on 2+ distinct India shows in 30 days (the problem statement's "media rounds"), whatever the gate. */
+  media_rounds?: GuestItem[];
   topics: TopicItem[];
   sponsors: SponsorItem[];
   global: GlobalItem[];
@@ -250,16 +252,18 @@ export function score(from: Date, to: Date, weights: Weights, data: ScoringData,
 
   const windowShows = new Set(data.windowEpisodes.map((e) => e.show_id));
   const rankedGuests = rank(guests);
+  const mediaRounds = rankedGuests.filter((g) => g.shows.length >= 2);
   const rankedSponsors = rank(sponsors);
   return {
     from: from.toISOString(),
     to: to.toISOString(),
     guests: rankedGuests,
+    media_rounds: mediaRounds,
     topics: rank(topics),
     sponsors: rankedSponsors,
     global: rank(global),
     stats: {
-      guests_on_media_rounds: rankedGuests.length,
+      guests_on_media_rounds: mediaRounds.length,
       brands_spending: rankedSponsors.filter((s) => s.paid).length,
       shows_scanned: windowShows.size,
       episodes_scanned: data.windowEpisodes.length,

@@ -64,6 +64,7 @@ export async function buildBrief(
     weights,
     shows_failed: opts.showsFailed ?? [],
     guests: [], topics: [], sponsors: [], global: [],
+    media_rounds: (result.media_rounds ?? []).slice(0, 5),
   };
   for (const s of SECTIONS) {
     (content[s] as Tagged[]) = applyTags(result[s] as Tagged[], TOP_N[s], prevContent?.[s] as Tagged[] | undefined);

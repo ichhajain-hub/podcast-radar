@@ -6,7 +6,8 @@ import { formatDate, formatTimestamp } from "@/lib/format";
 // Items can carry optional writer text (why_now / india_angle / action) and a New/Rising/Repeat tag.
 
 type Extra = { why_now?: string; india_angle?: string; action?: string; tag?: "New" | "Rising" | "Repeat" };
-export type RadarContent = Omit<ScoreResult, "guests" | "topics" | "sponsors" | "global"> & {
+export type RadarContent = Omit<ScoreResult, "guests" | "topics" | "sponsors" | "global" | "media_rounds"> & {
+  media_rounds?: GuestItem[];
   guests: (GuestItem & Extra)[];
   topics: (TopicItem & Extra)[];
   sponsors: (SponsorItem & Extra)[];
@@ -39,7 +40,7 @@ export function RadarView({ content, full = false, earlyNote }: { content: Radar
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Tile n={content.stats.guests_on_media_rounds} label="Guests on media rounds" hint={`On ${content.rules?.guest_min_shows ?? 2}+ India show${(content.rules?.guest_min_shows ?? 2) === 1 ? "" : "s"} in 30 days`} />
+        <Tile n={mediaRoundsCount(content)} label="Guests on media rounds" hint="On 2+ monitored India shows in 30 days" />
         <Tile n={content.stats.brands_spending} label="Brands spending" hint="Paid reads in the last 30 days" />
       </div>
 
@@ -47,6 +48,7 @@ export function RadarView({ content, full = false, earlyNote }: { content: Radar
         {guests.map((g, i) => (
           <Item key={g.entity_id} rank={i + 1} item={g} title={g.name}
             subtitle={[g.role, g.company].filter(Boolean).join(", ")}
+            badge={g.shows.length >= 2 ? <Badge tone="amber">Media rounds</Badge> : undefined}
             meta={`${g.shows.length} show${g.shows.length === 1 ? "" : "s"} (${g.shows.join(", ")}) · ${g.appearances} appearance${g.appearances === 1 ? "" : "s"}`}
             links={[
               g.linkedin_url ? { href: g.linkedin_url, label: g.linkedin_verified ? "LinkedIn" : "Search on LinkedIn" } : linkedinSearch(g),
@@ -54,6 +56,7 @@ export function RadarView({ content, full = false, earlyNote }: { content: Radar
             ]}
           />
         ))}
+        <MediaRounds content={content} />
       </Section>
 
       <Section title="Topics to ride or counter" empty={!topics.length} emptyText={earlyNote}>
@@ -87,6 +90,36 @@ export function RadarView({ content, full = false, earlyNote }: { content: Radar
           />
         ))}
       </Section>
+    </div>
+  );
+}
+
+/** True multi-show guests. Older stored briefs lack media_rounds, so derive it from their guests. */
+function mediaRoundsCount(c: RadarContent): number {
+  return c.media_rounds ? c.stats.guests_on_media_rounds : c.guests.filter((g) => g.shows.length >= 2).length;
+}
+
+function MediaRounds({ content }: { content: RadarContent }) {
+  const list = content.media_rounds ?? content.guests.filter((g) => g.shows.length >= 2);
+  return (
+    <div className="p-5">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Doing media rounds · 2+ India shows in 30 days</h3>
+      {list.length ? (
+        <ul className="mt-2 space-y-2 text-sm">
+          {list.map((g) => (
+            <li key={g.entity_id}>
+              <span className="font-medium">{g.name}</span>
+              {g.company && <span className="text-slate-500"> · {g.company}</span>}
+              <span className="text-slate-600"> — {g.shows.join(" + ")}</span>
+              {g.sources.map((s, i) => (
+                <a key={i} href={s.url} target="_blank" rel="noreferrer" className="ml-2 text-indigo-600 hover:underline">[{formatDate(s.published_at)}]</a>
+              ))}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-sm text-slate-500">No guest appeared on two or more monitored India shows in the last 30 days.</p>
+      )}
     </div>
   );
 }

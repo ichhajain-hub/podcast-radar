@@ -21,7 +21,7 @@ export async function explore(from: string, to: string): Promise<ScoreResult> {
 }
 
 export function topOnly(r: ScoreResult): ScoreResult {
-  return { ...r, guests: r.guests.slice(0, TOP_N.guests), topics: r.topics.slice(0, TOP_N.topics), sponsors: r.sponsors.slice(0, TOP_N.sponsors), global: r.global.slice(0, TOP_N.global) };
+  return { ...r, media_rounds: r.media_rounds?.slice(0, 5), guests: r.guests.slice(0, TOP_N.guests), topics: r.topics.slice(0, TOP_N.topics), sponsors: r.sponsors.slice(0, TOP_N.sponsors), global: r.global.slice(0, TOP_N.global) };
 }
 
 export async function historyStart(): Promise<string | null> {

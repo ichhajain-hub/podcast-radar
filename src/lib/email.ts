@@ -56,6 +56,11 @@ export function renderBriefHtml(c: BriefContent, appUrl = process.env.APP_URL ??
       }).join("")
     : empty("");
 
+  const rounds = c.media_rounds ?? c.guests.filter((g) => g.shows.length >= 2);
+  const roundsBlock = `<h3 style="margin:22px 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:${MUTED}">Doing media rounds · 2+ India shows in 30 days</h3>` + (rounds.length
+    ? rounds.map((g) => `<div style="font-size:14px;margin:4px 0"><b>${esc(g.name)}</b>${g.company ? ` · ${esc(g.company)}` : ""} — ${esc(g.shows.join(" + "))} ${g.sources.map((s) => link(s.url, `[${fmtDay(s.published_at)}]`)).join(" ")}</div>`).join("")
+    : `<p style="color:${MUTED};font-size:14px;margin:0">No guest appeared on two or more monitored India shows in the last 30 days.</p>`);
+
   const topics = c.topics.length
     ? c.topics.map((t) => item(`<div style="font-size:15px"><b>${esc(t.name)}</b>${tag(t.label === "counter" ? "counter" : "ride", t.label === "counter" ? "#fffbeb" : "#eef2ff", t.label === "counter" ? "#b45309" : ACCENT)}${tag(t.tag, ...tagColors(t.tag))}</div>
 <div style="color:#334155;font-size:14px;margin-top:4px">${t.show_count} India shows${t.why_now ? ` · ${esc(t.why_now)}` : ""}</div>${sources(t.sources)}`)).join("")
@@ -86,8 +91,8 @@ export function renderBriefHtml(c: BriefContent, appUrl = process.env.APP_URL ??
 <h1 style="margin:6px 0 4px;font-size:24px">Your Monday radar</h1>
 <div style="font-size:14px;color:${MUTED}">${fmtDay(c.from)} – ${fmtDay(end)} · ${c.stats.shows_scanned} shows scanned · ${c.stats.episodes_scanned} episodes scanned</div>${failed}
 </td></tr>
-<tr><td style="padding-top:20px"><table role="presentation" width="100%" cellpadding="0" cellspacing="8"><tr>${tile(c.stats.guests_on_media_rounds, `Guests on media rounds (${c.rules?.guest_min_shows ?? 2}+ India show${(c.rules?.guest_min_shows ?? 2) === 1 ? "" : "s"})`)}${tile(c.stats.brands_spending, "Brands spending")}</tr></table></td></tr>
-${section("Book this week", guests)}
+<tr><td style="padding-top:20px"><table role="presentation" width="100%" cellpadding="0" cellspacing="8"><tr>${tile(rounds.length, "Guests on media rounds (2+ India shows, 30 days)")}${tile(c.stats.brands_spending, "Brands spending")}</tr></table></td></tr>
+${section("Book this week", guests + roundsBlock)}
 ${section("Topics to ride or counter", topics + `<h3 style="margin:22px 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:${MUTED}">Global signals · for inspiration</h3>${global}`)}
 ${section("Sponsors to pitch", sponsors)}
 <tr><td style="padding:36px 0 0;border-top:1px solid #e2e8f0;margin-top:24px;font-size:13px;color:${MUTED}">

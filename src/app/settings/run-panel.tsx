@@ -37,7 +37,7 @@ export function RunPanel({ lastRun }: { lastRun: Run | null }) {
               ? <>Last run: {formatIST(lastRun.started_at)} · {lastRun.mode ?? "daily"} · <span className="font-medium">{lastRun.status}</span></>
               : "No runs yet."}{" "}
             <a href="/runs" className="text-indigo-600 hover:underline">Run log →</a>
-            <br />Automatic: daily 5:30 AM IST (refresh) and Mondays 6:30 AM IST (brief email).
+            <br />Automatic: every day at 5:30 AM IST (refresh); on Mondays that run also emails the brief (arrives by ~6:35 AM IST).
           </p>
         </div>
         <div className="flex gap-2">

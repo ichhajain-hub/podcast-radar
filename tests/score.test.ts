@@ -106,3 +106,16 @@ describe("guest gate setting", () => {
     expect(r.rules?.guest_min_shows).toBe(1);
   });
 });
+
+describe("media rounds", () => {
+  it("always lists guests on 2+ India shows and counts only them in the tile stat", () => {
+    const d = data(
+      [m("multi", "guest", "s1", 3), m("multi", "guest", "s2", 10), m("solo", "guest", "s3", 1)],
+      [ent("multi", "guest", "Two Shows", 2), ent("solo", "guest", "One Show", 5)],
+    );
+    const r = score(from, to, DEFAULT_WEIGHTS, d, { guestMinShows: 1 });
+    expect(r.guests).toHaveLength(2);
+    expect(r.media_rounds?.map((g) => g.name)).toEqual(["Two Shows"]);
+    expect(r.stats.guests_on_media_rounds).toBe(1);
+  });
+});
