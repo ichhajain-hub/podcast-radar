@@ -12,10 +12,12 @@ type RawItem = {
   contentEncoded?: string;
   itunesSummary?: string;
   enclosure?: { url?: string };
+  /** YouTube channel feeds (Atom) keep the video description in <media:group><media:description>. */
+  mediaGroup?: { "media:description"?: string[] };
 };
 
 const parser: Parser<object, RawItem> = new Parser({
-  customFields: { item: [["content:encoded", "contentEncoded"], ["itunes:summary", "itunesSummary"]] },
+  customFields: { item: [["content:encoded", "contentEncoded"], ["itunes:summary", "itunesSummary"], ["media:group", "mediaGroup"]] },
 });
 
 export type FeedEpisode = {
@@ -27,7 +29,10 @@ export type FeedEpisode = {
   audio_url: string | null;
 };
 
-/** Fetches and parses a live RSS feed. Large feeds (e.g. 20VC, ~12 MB) get a long timeout. */
+/**
+ * Fetches and parses a live feed: podcast RSS, or a YouTube channel's uploads feed (Atom, 15 newest
+ * videos) for shows that only publish on YouTube. Large feeds (e.g. 20VC, ~12 MB) get a long timeout.
+ */
 export async function fetchFeed(url: string, timeoutMs = 90_000): Promise<{ title: string; episodes: FeedEpisode[] }> {
   const res = await fetch(url, {
     signal: AbortSignal.timeout(timeoutMs),
@@ -51,7 +56,7 @@ export async function fetchFeed(url: string, timeoutMs = 90_000): Promise<{ titl
     const published = i.isoDate ?? (i.pubDate ? new Date(i.pubDate).toISOString() : null);
     const title = i.title?.trim();
     if (!published || !title || Number.isNaN(Date.parse(published))) continue;
-    const rawDesc = i.contentEncoded || i.content || i.itunesSummary || i.contentSnippet || "";
+    const rawDesc = i.contentEncoded || i.content || i.itunesSummary || i.mediaGroup?.["media:description"]?.[0] || i.contentSnippet || "";
     const uniqueLink = i.link && (linkCounts.get(i.link) ?? 0) === 1 ? i.link : null;
     const epUrl = uniqueLink ?? i.enclosure?.url ?? (i.guid?.startsWith("http") ? i.guid : null) ?? i.link;
     if (!epUrl) continue;

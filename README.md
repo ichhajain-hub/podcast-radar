@@ -169,5 +169,11 @@ the writer's fact-check, and a guard that fails if the other AI vendor's SDK, AP
   When it is used up, lookups stop for that run, the guest shows "Search on LinkedIn", and the next daily run retries.
 - **Email sender.** Without a verified domain, Resend only delivers to the account owner's address.
 - **Seed list changes.** Three seeded India shows had stopped publishing (The Barbershop, The Desi VC, 100x Entrepreneur)
-  and The Ranveer Show's English feed was sparse. They were switched off (history kept) and replaced with
-  The Prakhar Gupta Xperience, Z47 Moments, Think School's Indian Business Podcast and The Ranveer Show (Hindi). Change them in Settings.
+  and The Ranveer Show's English feed was sparse, so they were switched off (history kept). A guest-overlap study of
+  34 Indian shows (60 days, about 300 guests; `scripts/scout-list.ts`) found only 4 people on two shows. The list was
+  then tuned toward founder interviews, matching the host's goal of founders who are "slightly ahead of the curve".
+  Current India list: Figuring Out, WTF is with Nikhil Kamath, The Neon Show, Founder Thesis, Prime Venture Partners,
+  Paisa Vaisa, Z47 Moments, Moneycontrol Podcast, YourStory (read from its YouTube channel feed) and The Ranveer Show (Hindi).
+  Change them in Settings.
+- **YouTube-only shows** are read from the channel's public uploads feed, which only lists the 15 newest long-form
+  videos. A YouTube channel link can be pasted into Settings as a show's feed.

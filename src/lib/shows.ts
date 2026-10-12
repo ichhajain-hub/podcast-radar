@@ -1,5 +1,18 @@
 import { z } from "zod";
 import { fetchFeed } from "./rss";
+import { channelId } from "./youtube";
+
+/**
+ * A YouTube channel link (…/channel/UC…, …/@handle) is turned into that channel's long-form
+ * uploads feed, so YouTube-only shows can be tracked like podcasts.
+ */
+export async function normalizeFeedUrl(url: string): Promise<{ rss_url: string; youtube_channel_url?: string }> {
+  const u = url.trim();
+  if (!/youtube\.com\/(channel\/|@|c\/|user\/)/i.test(u) || /feeds\/videos\.xml/i.test(u)) return { rss_url: u };
+  const id = await channelId(u);
+  if (!id) throw new Error("Couldn't find that YouTube channel.");
+  return { rss_url: `https://www.youtube.com/feeds/videos.xml?playlist_id=UULF${id.slice(2)}`, youtube_channel_url: `https://www.youtube.com/channel/${id}` };
+}
 
 export const showInput = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),

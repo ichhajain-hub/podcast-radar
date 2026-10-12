@@ -50,7 +50,11 @@ export async function rateMissingFits(result: ScoreResult, runId: string | null)
   }));
 
   return {
-    guests: await rate("fit_guests", "How good a podcast guest would each person be for an audience of independent Indian startup founders?", guests, "fit", runId),
+    guests: await rate(
+      "fit_guests",
+      "The host runs a podcast for independent Indian startup founders and wants guests who are interesting and slightly ahead of the curve: founders building something significant BEFORE they are inundated with podcast requests. Rate each person on that: high for founders/operators of notable, rising companies with a story other founders can learn from; low for celebrities, entertainers, generic commentators, or people already everywhere on podcasts.",
+      guests, "fit", runId,
+    ),
     brands: await rate("fit_brands", "How good a sponsor fit is each brand for a podcast whose audience is startup founders?", brands, "fit", runId),
     global: await rate("fit_global", "How well does each global podcast topic translate to Indian startup founders (relevance to Indian market, regulation, consumers)?", globals, "india_fit", runId),
   };

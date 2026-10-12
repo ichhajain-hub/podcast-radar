@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdmin, unauthorized } from "@/lib/auth";
-import { showInput, validateFeed } from "@/lib/shows";
+import { normalizeFeedUrl, showInput, validateFeed } from "@/lib/shows";
 import { db } from "@/lib/supabase";
 
 export const maxDuration = 60;
@@ -16,6 +16,13 @@ export async function POST(req: Request) {
   if (!(await isAdmin())) return unauthorized();
   const parsed = showInput.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
+  try {
+    const n = await normalizeFeedUrl(parsed.data.rss_url);
+    parsed.data.rss_url = n.rss_url;
+    if (n.youtube_channel_url && !parsed.data.youtube_channel_url) parsed.data.youtube_channel_url = n.youtube_channel_url;
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 422 });
+  }
   const check = await validateFeed(parsed.data.rss_url);
   if (!check.ok) return NextResponse.json({ error: check.error }, { status: 422 });
   const { data, error } = await db().from("shows").insert({

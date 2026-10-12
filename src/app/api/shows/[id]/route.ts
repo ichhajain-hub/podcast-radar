@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdmin, unauthorized } from "@/lib/auth";
-import { showInput, validateFeed } from "@/lib/shows";
+import { normalizeFeedUrl, showInput, validateFeed } from "@/lib/shows";
 import { db } from "@/lib/supabase";
 
 export const maxDuration = 60;
@@ -13,6 +13,15 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/shows/[id]">) 
   const patch: Record<string, unknown> = { ...parsed.data, updated_at: new Date().toISOString() };
   if ("youtube_channel_url" in patch) patch.youtube_channel_url = patch.youtube_channel_url || null;
 
+  if (parsed.data.rss_url) {
+    try {
+      const n = await normalizeFeedUrl(parsed.data.rss_url);
+      patch.rss_url = parsed.data.rss_url = n.rss_url;
+      if (n.youtube_channel_url && !parsed.data.youtube_channel_url) patch.youtube_channel_url = n.youtube_channel_url;
+    } catch (e) {
+      return NextResponse.json({ error: (e as Error).message }, { status: 422 });
+    }
+  }
   let check = null;
   const { data: current } = await db().from("shows").select("rss_url, active").eq("id", id).single();
   const urlChanged = parsed.data.rss_url && parsed.data.rss_url !== current?.rss_url;

@@ -91,7 +91,7 @@ export function ShowsPanel({ initial }: { initial: Show[] }) {
         <input className={`${input} mt-2`} placeholder="Host names, comma separated" value={draft.hosts} onChange={(e) => setDraft({ ...draft, hosts: e.target.value })} />
       </td>
       <td className="p-2 align-top">
-        <input className={input} placeholder="https://… RSS feed" value={draft.rss_url} onChange={(e) => setDraft({ ...draft, rss_url: e.target.value })} />
+        <input className={input} placeholder="https://… RSS feed, or a YouTube channel link" value={draft.rss_url} onChange={(e) => setDraft({ ...draft, rss_url: e.target.value })} />
         <input className={`${input} mt-2`} placeholder="YouTube channel URL (optional)" value={draft.youtube_channel_url} onChange={(e) => setDraft({ ...draft, youtube_channel_url: e.target.value })} />
       </td>
       <td className="p-2 align-top">
