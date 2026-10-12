@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { RadarView } from "@/components/radar-view";
 import { addDays, isDay, istDay, istDayStart, istMonday } from "@/lib/dates";
-import { formatIST } from "@/lib/format";
+import { formatDate, formatIST } from "@/lib/format";
 import { explore, historyStart, latestBriefWeek, sentBriefs } from "@/lib/history";
 import { db } from "@/lib/supabase";
 import { DateFilter, type Preset } from "./date-filter";
@@ -76,7 +76,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Sea
           {stored ? (
             <>
               <Banner>
-                Monday brief for this week · {stored.sent_at ? `emailed ${formatIST(stored.sent_at)}` : `written ${formatIST(stored.content.generated_at)}`}
+                Monday brief for {formatDate(istDayStart(from).toISOString())} – {formatDate(istDayStart(addDays(from, 6)).toISOString())} · {stored.sent_at ? `emailed ${formatIST(stored.sent_at)}` : `written ${formatIST(stored.content.generated_at)}`}
               </Banner>
               <RadarView content={stored.content} />
             </>
