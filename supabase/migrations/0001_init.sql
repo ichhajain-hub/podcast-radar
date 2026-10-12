@@ -70,6 +70,6 @@ on conflict (key) do nothing;
 
 insert into settings (key, value) values
   ('deep_read_max_minutes', '170'),
-  ('price_input_per_1m', '0.10'),
-  ('price_output_per_1m', '0.40')
+  ('price_input_per_1m', '0.75'),
+  ('price_output_per_1m', '3.75')
 on conflict (key) do nothing;
