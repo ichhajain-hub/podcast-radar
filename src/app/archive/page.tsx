@@ -19,7 +19,7 @@ export default async function ArchivePage() {
         {briefs.map((b) => (
           <li key={b.week_start} className="flex flex-wrap items-center justify-between gap-2 p-5">
             <div>
-              <Link href={`/?preset=custom&view=sent&from=${b.week_start}&to=${addDays(b.week_start, 7)}`} className="font-medium text-indigo-600 hover:underline">
+              <Link href={`/?preset=custom&from=${b.week_start}&to=${addDays(b.week_start, 7)}`} className="font-medium text-indigo-600 hover:underline">
                 Week of {fmt(b.week_start)} – {fmt(addDays(b.week_start, 6))}
               </Link>
               <div className="text-sm text-slate-500">

@@ -1,4 +1,5 @@
 import type { BriefContent } from "./brief";
+import { addDays } from "./dates";
 import type { Source } from "./score";
 
 // Email HTML for the Monday brief: white background, one accent colour, inline styles only
@@ -35,8 +36,9 @@ function section(title: string, body: string) {
   return `<tr><td style="padding:28px 0 0"><h2 style="margin:0 0 12px;font-size:18px;color:#0f172a">${esc(title)}</h2>${body}</td></tr>`;
 }
 
-function item(inner: string) {
-  return `<div style="padding:14px 0;border-top:1px solid #e2e8f0">${inner}</div>`;
+function item(inner: string, score?: number) {
+  const ring = score == null ? "" : `<td width="52" valign="top" align="right"><div style="width:40px;height:40px;border-radius:50%;border:3px solid ${ACCENT};text-align:center;line-height:40px;font-weight:700;font-size:14px;color:#0f172a">${Math.round(score)}</div></td>`;
+  return `<div style="padding:14px 0;border-top:1px solid #e2e8f0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td valign="top">${inner}</td>${ring}</tr></table></div>`;
 }
 
 const empty = (what: string) => `<p style="color:${MUTED};font-size:14px;margin:0">Nothing crossed the threshold this week${what}.</p>`;
@@ -52,7 +54,7 @@ export function renderBriefHtml(c: BriefContent, appUrl = process.env.APP_URL ??
           : link(`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent([g.name, g.company].filter(Boolean).join(" "))}`, "Search on LinkedIn");
         return item(`<div style="font-size:15px"><b>${esc(g.name)}</b>${g.role || g.company ? ` · ${esc([g.role, g.company].filter(Boolean).join(", "))}` : ""}${tag(g.tag, ...tagColors(g.tag))}${tag(g.action ? g.action : "book")}</div>
 <div style="color:#334155;font-size:14px;margin-top:4px">On ${g.shows.length} show${g.shows.length === 1 ? "" : "s"} (${esc(g.shows.join(", "))})${g.why_now ? ` · ${esc(g.why_now)}` : ""}</div>
-<div style="font-size:13px;margin-top:6px">${li}${g.website_url ? ` &nbsp;·&nbsp; ${link(g.website_url, "Company website")}` : ""}</div>${sources(g.sources)}`);
+<div style="font-size:13px;margin-top:6px">${li}${g.website_url ? ` &nbsp;·&nbsp; ${link(g.website_url, "Company website")}` : ""}</div>${sources(g.sources)}`, g.score);
       }).join("")
     : empty("");
 
@@ -63,17 +65,17 @@ export function renderBriefHtml(c: BriefContent, appUrl = process.env.APP_URL ??
 
   const topics = c.topics.length
     ? c.topics.map((t) => item(`<div style="font-size:15px"><b>${esc(t.name)}</b>${tag(t.label === "counter" ? "counter" : "ride", t.label === "counter" ? "#fffbeb" : "#eef2ff", t.label === "counter" ? "#b45309" : ACCENT)}${tag(t.tag, ...tagColors(t.tag))}</div>
-<div style="color:#334155;font-size:14px;margin-top:4px">${t.show_count} India shows${t.why_now ? ` · ${esc(t.why_now)}` : ""}</div>${sources(t.sources)}`)).join("")
+<div style="color:#334155;font-size:14px;margin-top:4px">${t.show_count} India shows${t.why_now ? ` · ${esc(t.why_now)}` : ""}</div>${sources(t.sources)}`, t.score)).join("")
     : empty("");
 
   const global = c.global.length
     ? c.global.map((g) => item(`<div style="font-size:15px"><b>${esc(g.name)}</b>${tag(g.tag, ...tagColors(g.tag))}</div>
-<div style="color:#334155;font-size:14px;margin-top:4px">${g.global_count} global shows vs ${g.india_count} India shows${g.india_angle ? `<br>India angle: ${esc(g.india_angle)}` : ""}</div>${sources(g.sources)}`)).join("")
+<div style="color:#334155;font-size:14px;margin-top:4px">${g.global_count} global shows vs ${g.india_count} India shows${g.india_angle ? `<br>India angle: ${esc(g.india_angle)}` : ""}</div>${sources(g.sources)}`, g.score)).join("")
     : empty(" (needs 2+ global shows in 14 days)");
 
   const sponsors = c.sponsors.length
     ? c.sponsors.map((s) => item(`<div style="font-size:15px"><b>${esc(s.name)}</b>${tag(s.paid ? "Paid" : "Organic", s.paid ? "#ecfdf5" : "#f1f5f9", s.paid ? "#047857" : MUTED)}${tag(s.tag, ...tagColors(s.tag))}</div>
-<div style="color:#334155;font-size:14px;margin-top:4px">${s.show_count} shows${s.why_now ? ` · ${esc(s.why_now)}` : ""}</div>${sources(s.sources)}`)).join("")
+<div style="color:#334155;font-size:14px;margin-top:4px">${s.show_count} shows${s.why_now ? ` · ${esc(s.why_now)}` : ""}</div>${sources(s.sources)}`, s.score)).join("")
     : empty("");
 
   const failed = c.shows_failed?.length
@@ -96,7 +98,7 @@ ${section("Book this week", guests + roundsBlock)}
 ${section("Topics to ride or counter", topics + `<h3 style="margin:22px 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:${MUTED}">Global signals · for inspiration</h3>${global}`)}
 ${section("Sponsors to pitch", sponsors)}
 <tr><td style="padding:36px 0 0;border-top:1px solid #e2e8f0;margin-top:24px;font-size:13px;color:${MUTED}">
-Built with Gemini Flash · Edit your shows in ${link(`${appUrl}/settings`, "Settings")} · ${link(`${appUrl}/?view=sent&from=${c.week_start}`, "Open dashboard")}
+Built with Gemini Flash · Edit your shows in ${link(`${appUrl}/settings`, "Settings")} · ${link(`${appUrl}/?preset=custom&from=${c.week_start}&to=${addDays(c.week_start, 7)}`, "Open dashboard")}
 </td></tr>
 </table></td></tr></table></body></html>`;
 }

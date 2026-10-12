@@ -11,7 +11,7 @@ export async function loadScoringData(from: Date, to: Date): Promise<ScoringData
   const until = to.toISOString();
 
   const [shows, entities, mentions, windowEpisodes] = await Promise.all([
-    selectAll<ShowLite>((a, b) => db().from("shows").select("id, name, region, hosts").order("id").range(a, b)),
+    selectAll<ShowLite & { active: boolean }>((a, b) => db().from("shows").select("id, name, region, hosts, active").order("id").range(a, b)),
     selectAll<EntityLite & { merged_into: string | null }>((a, b) =>
       db().from("entities")
         .select("id, type, canonical_name, company, role, website_url, linkedin_url, linkedin_verified, fit, india_fit, merged_into")
@@ -29,6 +29,12 @@ export async function loadScoringData(from: Date, to: Date): Promise<ScoringData
     ),
   ]);
 
+  // Only shows that are switched on in Settings count; a switched-off show (or an old feed of the
+  // same show) must not add "another show" to a guest's or topic's count.
+  const activeShows = new Set(shows.filter((x) => x.active).map((x) => x.id));
+  const activeMentions = mentions.filter((m) => activeShows.has(m.episode.show_id));
+  const activeWindowEpisodes = windowEpisodes.filter((e) => activeShows.has(e.show_id));
+
   // Merged duplicates point at their canonical entity; score everything under the canonical id.
   const byId = new Map(entities.map((e) => [e.id, e]));
   const root = (id: string) => {
@@ -36,20 +42,20 @@ export async function loadScoringData(from: Date, to: Date): Promise<ScoringData
     for (let hops = 0; e?.merged_into && hops < 10; hops++) e = byId.get(e.merged_into);
     return e?.id ?? id;
   };
-  for (const m of mentions) m.entity_id = root(m.entity_id);
+  for (const m of activeMentions) m.entity_id = root(m.entity_id);
   // A merged duplicate can make two mentions of one entity in one episode; keep one per kind.
   const seen = new Set<string>();
-  const unique = mentions.filter((m) => {
+  const unique = activeMentions.filter((m) => {
     const k = `${m.episode.id}|${m.entity_id}|${m.kind}`;
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
   });
   return {
-    shows,
+    shows: shows.filter((x) => x.active),
     entities: new Map(entities.filter((e) => !e.merged_into).map((e) => [e.id, e])),
     mentions: unique,
-    windowEpisodes,
+    windowEpisodes: activeWindowEpisodes,
   };
 }
 

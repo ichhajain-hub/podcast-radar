@@ -23,64 +23,49 @@ const PRESETS: { id: Exclude<Preset, "custom">; label: string }[] = [
   { id: "last-30", label: "Last 30 days" },
 ];
 
-export function DateFilter(props: { preset: Preset | null; from: string; to: string; view: "sent" | "explore"; historyStart: string | null }) {
+/** Date presets + custom range. A week with a stored Monday brief shows that brief; any other range is calculated live. */
+export function DateFilter(props: { preset: Preset | null; from: string; to: string; historyStart: string | null }) {
   const router = useRouter();
   const [custom, setCustom] = useState(props.preset === "custom");
   const [from, setFrom] = useState(props.from);
   const [toIncl, setToIncl] = useState(addDays(props.to, -1));
   const today = istDay(new Date());
 
-  const go = (q: { preset: Preset; from: string; to: string; view: "sent" | "explore" }) =>
-    router.push(`/?preset=${q.preset}&from=${q.from}&to=${q.to}&view=${q.view}`);
-
-  const pick = (p: Exclude<Preset, "custom">) => {
-    setCustom(false);
-    go({ preset: p, ...presetRange(p), view: props.view });
-  };
+  const go = (q: { preset: Preset; from: string; to: string }) => router.push(`/?preset=${q.preset}&from=${q.from}&to=${q.to}`);
 
   const btn = (active: boolean) =>
-    `rounded-full px-3 py-1.5 text-sm transition ${active ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`;
+    `rounded-full px-3.5 py-1.5 text-sm font-medium transition ${active ? "bg-slate-900 text-white" : "bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"}`;
 
   return (
-    <div className="rounded-2xl border border-slate-200 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          {PRESETS.map((p) => (
-            <button key={p.id} onClick={() => pick(p.id)} className={btn(!custom && props.preset === p.id)}>{p.label}</button>
-          ))}
-          <button onClick={() => setCustom(true)} className={btn(custom)}>Custom range</button>
-        </div>
-        <div className="inline-flex rounded-full bg-slate-100 p-1 text-sm" role="tablist" aria-label="View">
-          {(["sent", "explore"] as const).map((v) => (
-            <button
-              key={v} role="tab" aria-selected={props.view === v}
-              onClick={() => go({ preset: props.preset ?? "custom", from: props.from, to: props.to, view: v })}
-              className={`rounded-full px-3 py-1 ${props.view === v ? "bg-white font-medium text-slate-900 shadow-sm" : "text-slate-600"}`}
-            >
-              {v === "sent" ? "As sent" : "Explore"}
-            </button>
-          ))}
-        </div>
+    <div>
+      <div className="flex flex-wrap items-center gap-2">
+        {PRESETS.map((p) => (
+          <button key={p.id} onClick={() => { setCustom(false); go({ preset: p.id, ...presetRange(p.id) }); }} className={btn(!custom && props.preset === p.id)}>
+            {p.label}
+          </button>
+        ))}
+        <button onClick={() => setCustom(!custom)} className={btn(custom)}>Custom range</button>
+        {props.historyStart && (
+          <span className="ml-auto text-xs text-slate-500">
+            History starts {new Date(`${props.historyStart}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}
+          </span>
+        )}
       </div>
       {custom && (
-        <div className="mt-3 flex flex-wrap items-end gap-3 text-sm">
-          <label className="flex flex-col gap-1 text-slate-600">From
-            <input type="date" value={from} min={props.historyStart ?? undefined} max={today} onChange={(e) => setFrom(e.target.value)} className="rounded-md border border-slate-300 px-2 py-1.5" />
+        <div className="mt-3 flex flex-wrap items-end gap-3 rounded-xl bg-white p-3 text-sm ring-1 ring-inset ring-slate-200">
+          <label htmlFor="range-from" className="flex flex-col gap-1 text-slate-600">From
+            <input id="range-from" type="date" value={from} min={props.historyStart ?? undefined} max={today} onChange={(e) => setFrom(e.target.value)} className="rounded-md border border-slate-300 px-2 py-1.5" />
           </label>
-          <label className="flex flex-col gap-1 text-slate-600">To
-            <input type="date" value={toIncl} min={from} max={today} onChange={(e) => setToIncl(e.target.value)} className="rounded-md border border-slate-300 px-2 py-1.5" />
+          <label htmlFor="range-to" className="flex flex-col gap-1 text-slate-600">To
+            <input id="range-to" type="date" value={toIncl} min={from} max={today} onChange={(e) => setToIncl(e.target.value)} className="rounded-md border border-slate-300 px-2 py-1.5" />
           </label>
           <button
             disabled={!from || !toIncl || from > toIncl}
-            onClick={() => go({ preset: "custom", from, to: addDays(toIncl, 1), view: props.view })}
-            className="rounded-md bg-indigo-600 px-3 py-1.5 font-medium text-white disabled:opacity-50"
-          >Apply</button>
+            onClick={() => go({ preset: "custom", from, to: addDays(toIncl, 1) })}
+            className="rounded-md bg-slate-900 px-3 py-1.5 font-medium text-white disabled:opacity-50"
+          >Show</button>
         </div>
       )}
-      <p className="mt-3 text-xs text-slate-500">
-        {props.historyStart ? `History starts ${new Date(`${props.historyStart}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}. ` : ""}
-        <b>As sent</b> shows the stored brief for each week, exactly as emailed. <b>Explore</b> recomputes any range live with the current weights.
-      </p>
     </div>
   );
 }

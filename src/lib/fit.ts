@@ -44,6 +44,10 @@ export async function rateMissingFits(result: ScoreResult, runId: string | null)
     id: s.entity_id,
     text: `${s.name} (${s.paid ? "paid sponsor read" : "organic mention"}) on ${s.shows.join(", ")}. Evidence: ${s.sources.map((x) => x.evidence).filter(Boolean).slice(0, 2).join(" | ")}`,
   }));
+  const topics = result.topics.filter((t) => t.fit_pending).slice(0, 60).map((t) => ({
+    id: t.entity_id,
+    text: `Topic "${t.name}" on ${t.shows.join(", ")}. Evidence: ${t.sources.map((x) => x.evidence).filter(Boolean).slice(0, 3).join(" | ")}`,
+  }));
   const globals = result.global.filter((g) => g.fit_pending).slice(0, 40).map((g) => ({
     id: g.entity_id,
     text: `Topic "${g.name}" covered by ${g.shows.join(", ")}. Evidence: ${g.sources.map((x) => x.evidence).filter(Boolean).slice(0, 2).join(" | ")}`,
@@ -54,6 +58,11 @@ export async function rateMissingFits(result: ScoreResult, runId: string | null)
       "fit_guests",
       "The host runs a podcast for independent Indian startup founders and wants guests who are interesting and slightly ahead of the curve: founders building something significant BEFORE they are inundated with podcast requests. Rate each person on that: high for founders/operators of notable, rising companies with a story other founders can learn from; low for celebrities, entertainers, generic commentators, or people already everywhere on podcasts.",
       guests, "fit", runId,
+    ),
+    topics: await rate(
+      "fit_topics",
+      "The host runs a podcast for independent Indian startup founders. How relevant is each topic to that audience as a theme to cover or counter? 5 = core (startups, fundraising, AI and tech, markets, business models, growth, hiring, money). 1 = unrelated to building a company (religion and rituals, travel and tourism vlogs, celebrity gossip, sports, astrology, relationships). Judge by the evidence, not just the label.",
+      topics, "fit", runId,
     ),
     brands: await rate("fit_brands", "How good a sponsor fit is each brand for a podcast whose audience is startup founders?", brands, "fit", runId),
     global: await rate("fit_global", "How well does each global podcast topic translate to Indian startup founders (relevance to Indian market, regulation, consumers)?", globals, "india_fit", runId),

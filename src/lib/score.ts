@@ -66,7 +66,15 @@ export type GuestItem = Base & {
   website_url: string | null;
   fit_pending: boolean;
 };
-export type TopicItem = Base & { show_count: number; label: "ride" | "counter"; stances: Record<string, number>; trend: number[] };
+export type TopicItem = Base & {
+  show_count: number;
+  label: "ride" | "counter";
+  stances: Record<string, number>;
+  trend: number[];
+  /** Gemini 1-5: relevance to independent Indian startup founders (topics rated 1-2 are gated out). */
+  relevance: number | null;
+  fit_pending: boolean;
+};
 export type SponsorItem = Base & { paid: boolean; show_count: number; first_seen: string; trend: number[]; fit_pending: boolean };
 export type GlobalItem = Base & { global_count: number; india_count: number; fit_pending: boolean };
 
@@ -189,7 +197,9 @@ export function score(from: Date, to: Date, weights: Weights, data: ScoringData,
       // India topics: momentum score
       const week = tm.filter((m) => within(m, F, T) && region(m) === "india");
       const weekShows = distinctShows(week);
-      if (weekShows.size >= 2) {
+      // Relevance gate: a theme Gemini rated 1-2 for a founder audience (religion, travel, gossip…) is skipped.
+      const relevant = e.fit == null || e.fit >= 3;
+      if (weekShows.size >= 2 && relevant) {
         let prev = 0;
         for (let k = 1; k <= 4; k++) {
           prev += distinctShows(tm.filter((m) => region(m) === "india" && within(m, F - k * L, F - (k - 1) * L))).size;
@@ -211,6 +221,7 @@ export function score(from: Date, to: Date, weights: Weights, data: ScoringData,
           sources: sourcesOf(week), shows: showNames(weekShows), show_count: weekShows.size,
           label: Object.values(stances).some((n) => n >= 3) ? "counter" : "ride", stances,
           trend: trend(tm.filter((m) => region(m) === "india")),
+          relevance: e.fit, fit_pending: e.fit == null,
         });
       }
 

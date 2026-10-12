@@ -246,10 +246,11 @@ export async function clusterTopics(runId: string | null): Promise<number> {
     const out = await generateJson({
       task: "cluster_topics", runId, schema: clusterSchema, note: `${chunk.length} topic labels`,
       prompt: `These are topic labels extracted from Indian and global business podcasts.
-Group labels that describe the same theme — the ones a newsletter editor would file under one heading.
-Examples of one theme: "ai agents for smbs" / "ai agents for small business" / "smb ai automation"; "quick commerce unit economics" / "q-commerce profitability" / "10-minute delivery economics".
-Do NOT group merely adjacent themes ("ai in healthcare" vs "ai in education", "ipo market" vs "venture capital").
-Copy labels exactly. Only return groups with 2 or more members; leave unique labels out.
+Group ONLY labels that are rewordings of the same specific theme — near-synonyms a reader would call the same topic.
+Examples of one group: "ai agents for smbs" / "ai agents for small business"; "quick commerce unit economics" / "q-commerce profitability".
+Do NOT group labels that merely share a field or a keyword: "stock trading" vs "microsoft stock outlook" vs "stockbroking business" are three topics;
+"data centre investments" vs "commercial real estate" are two; "diwali rituals" vs "buddhist philosophy" vs "ai storytelling with mythology" are three.
+When in doubt, leave labels apart. Copy labels exactly. Only return groups with 2 or more members.
 
 ${chunk.map((r) => `- ${r.canonical_name}`).join("\n")}`,
     });
