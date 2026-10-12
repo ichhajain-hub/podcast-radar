@@ -18,7 +18,7 @@ export async function loadScoringData(from: Date, to: Date): Promise<ScoringData
     ),
     selectAll<MentionLite & { id: string }>((a, b) =>
       db().from("mentions")
-        .select("id, entity_id, kind, source, confidence, evidence, timestamp_seconds, stance, episode:episodes!inner(id, show_id, title, url, youtube_url, published_at)")
+        .select("id, entity_id, kind, source, confidence, evidence, timestamp_seconds, stance, episode:episodes!inner(id, show_id, title, url, youtube_url, audio_url, published_at)")
         .gte("episode.published_at", since)
         .lt("episode.published_at", until)
         .order("id").range(a, b) as never,

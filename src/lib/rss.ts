@@ -24,6 +24,7 @@ export type FeedEpisode = {
   url: string;
   published_at: string;
   youtube_url: string | null;
+  audio_url: string | null;
 };
 
 /** Fetches and parses a live RSS feed. Large feeds (e.g. 20VC, ~12 MB) get a long timeout. */
@@ -60,6 +61,7 @@ export async function fetchFeed(url: string, timeoutMs = 90_000): Promise<{ titl
       url: epUrl,
       published_at: published,
       youtube_url: findYouTube(`${rawDesc} ${i.link ?? ""} ${i.guid ?? ""}`),
+      audio_url: i.enclosure?.url ?? null,
     });
   }
   return { title: feed.title ?? "", episodes };

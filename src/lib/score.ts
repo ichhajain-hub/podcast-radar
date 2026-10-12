@@ -6,7 +6,7 @@ import type { Weights } from "./weights";
 
 export type Region = "india" | "global" | "own";
 export type ShowLite = { id: string; name: string; region: Region; hosts: string[] | null };
-export type EpisodeLite = { id: string; show_id: string; title: string; url: string; youtube_url: string | null; published_at: string };
+export type EpisodeLite = { id: string; show_id: string; title: string; url: string; youtube_url: string | null; audio_url?: string | null; published_at: string };
 export type MentionLite = {
   entity_id: string;
   kind: "guest" | "topic" | "paid" | "organic";
@@ -106,7 +106,8 @@ export function score(from: Date, to: Date, weights: Weights, data: ScoringData)
       byEp.set(m.episode.id, {
         show_name: showById.get(m.episode.show_id)?.name ?? "Unknown show",
         episode_title: m.episode.title,
-        url: video ? withTimestamp(m.episode.youtube_url!, m.timestamp_seconds) : m.episode.url,
+        // The public YouTube video is the most reliable link (feed pages, e.g. old Spotify-for-Podcasters URLs, can 404).
+        url: video ? withTimestamp(m.episode.youtube_url!, m.timestamp_seconds) : m.episode.youtube_url ?? webOrAudio(m.episode),
         published_at: m.episode.published_at,
         timestamp_seconds: m.timestamp_seconds,
         evidence: m.evidence,
@@ -256,6 +257,12 @@ export function score(from: Date, to: Date, weights: Weights, data: ScoringData)
       episodes_scanned: data.windowEpisodes.length,
     },
   };
+}
+
+// Retired hosts whose episode pages now 404; the audio file still plays.
+const DEAD_PAGE = /podcasters\.spotify\.com|anchor\.fm\/[^/]+\/episodes/;
+function webOrAudio(ep: EpisodeLite): string {
+  return DEAD_PAGE.test(ep.url) && ep.audio_url ? ep.audio_url : ep.url;
 }
 
 function sum(c: Record<string, number>): number {
