@@ -1,4 +1,4 @@
-import { callGemini } from "./gemini";
+import { callGemini, QUOTA_SPENT } from "./gemini";
 import { db } from "./supabase";
 import { normName } from "./text";
 
@@ -81,7 +81,9 @@ export async function lookupGuests(guests: { entity_id: string; name: string }[]
         linkedin_url: r.linkedin_url, linkedin_verified: r.linkedin_verified, website_url: r.website_url, lookup_at: new Date().toISOString(),
       }).eq("id", e.id);
     } catch (err) {
-      console.error("lookup failed", e.canonical_name, (err as Error).message);
+      // Not marked as looked up, so the next run retries it. Stop early if the search quota is spent.
+      console.error("lookup failed", e.canonical_name, (err as Error).message.slice(0, 120));
+      if (QUOTA_SPENT.test((err as Error).message)) break;
     }
   }
   return due.length;

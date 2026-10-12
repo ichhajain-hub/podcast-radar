@@ -70,7 +70,7 @@ function fallback(f: Facts): { why_now: string; action: string; india_angle: str
   const x = f.facts as Record<string, number | string | string[]>;
   const shows = (x.shows as string[]).slice(0, 3).join(", ");
   switch (f.section) {
-    case "guests": return { why_now: `On ${x.india_shows} India shows in 30 days: ${shows}.`, action: "book", india_angle: "" };
+    case "guests": return { why_now: `On ${x.india_shows} India show${x.india_shows === 1 ? "" : "s"} in 30 days: ${shows}.`, action: "book", india_angle: "" };
     case "topics": return { why_now: `Covered by ${x.india_shows_this_week} India shows this week: ${shows}.`, action: String(x.label), india_angle: "" };
     case "sponsors": return { why_now: `${x.paid ? "Paid reads" : "Mentions"} on ${x.shows_30d} show${x.shows_30d === 1 ? "" : "s"} in 30 days: ${shows}.`, action: "pitch", india_angle: "" };
     case "global": return { why_now: `On ${x.global_shows_14d} global shows in 14 days, ${x.india_shows_30d} India shows in 30.`, action: "ride", india_angle: "Not yet covered by India shows — room to lead the conversation." };

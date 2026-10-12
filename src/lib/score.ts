@@ -76,6 +76,13 @@ export type ScoreResult = {
   sponsors: SponsorItem[];
   global: GlobalItem[];
   stats: { guests_on_media_rounds: number; brands_spending: number; shows_scanned: number; episodes_scanned: number };
+  /** Thresholds used for this result, so views can label the gate correctly. */
+  rules?: { guest_min_shows: number };
+};
+
+export type ScoreOptions = {
+  /** Guest gate: distinct India shows in 30 days (spec default 2; editable in Settings). */
+  guestMinShows?: number;
 };
 
 export const TOP_N = { guests: 3, topics: 3, sponsors: 3, global: 2 } as const;
@@ -84,7 +91,8 @@ const DAY = 864e5;
 const r1 = (x: number) => Math.round(x * 10) / 10;
 const fitOrNeutral = (x: number | null) => (x == null ? 3 : Math.min(5, Math.max(1, x)));
 
-export function score(from: Date, to: Date, weights: Weights, data: ScoringData): ScoreResult {
+export function score(from: Date, to: Date, weights: Weights, data: ScoringData, opts: ScoreOptions = {}): ScoreResult {
+  const guestMinShows = Math.max(1, Math.round(opts.guestMinShows ?? 2));
   const F = from.getTime();
   const T = to.getTime();
   const L = Math.max(T - F, DAY);
@@ -145,14 +153,14 @@ export function score(from: Date, to: Date, weights: Weights, data: ScoringData)
       const gm = all.filter((m) => m.kind === "guest");
       const in30 = gm.filter((m) => within(m, T - 30 * DAY, T) && region(m) === "india");
       const shows = distinctShows(in30);
-      if (shows.size < 2) continue;
+      if (shows.size < guestMinShows) continue;
       if (hostNames.has(normName(e.canonical_name))) continue;
       if (gm.some((m) => region(m) === "own" && within(m, T - 365 * DAY, T))) continue;
 
       const eps = new Set(in30.map((m) => m.episode.id));
       const recentEps = new Set(in30.filter((m) => within(m, T - 14 * DAY, T)).map((m) => m.episode.id));
       const before = new Set(gm.filter((m) => t(m) < T - 30 * DAY).map((m) => m.episode.id)).size;
-      const spreadPts = shows.size >= 4 ? 40 : shows.size === 3 ? 30 : 20;
+      const spreadPts = Math.min(shows.size, 4) * 10; // 1 = 10, 2 = 20, 3 = 30, 4+ = 40
       const c = {
         guest_spread: r1((w.guest_spread * spreadPts) / 40),
         guest_recency: r1(w.guest_recency * (recentEps.size / eps.size)),
@@ -256,6 +264,7 @@ export function score(from: Date, to: Date, weights: Weights, data: ScoringData)
       shows_scanned: windowShows.size,
       episodes_scanned: data.windowEpisodes.length,
     },
+    rules: { guest_min_shows: guestMinShows },
   };
 }
 

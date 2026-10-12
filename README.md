@@ -83,7 +83,8 @@ Open `/settings` and enter the admin password. You stay signed in for 7 days (ht
   episode title, or a clear error. Counts show `India: 10/10 · Global: 5 · Own: 1`, with a warning if India ≠ 10.
   A show with stored history can only be switched off, not deleted (history is permanent).
   Add a **YouTube channel URL** for India shows so their videos can be deep-read for sponsors.
-- **Scoring weights**: one number per component, grouped, with a live "total = 100" check and **Reset to defaults**.
+- **Scoring weights**: one number per component, grouped, with a live "total = 100" check and **Reset to defaults**,
+  plus the **Guest gate** (minimum India shows in 30 days for "Book this week").
 - **YouTube deep-read & spend**: max minutes per video (0 = full video), Gemini prices per 1M tokens, and estimated spend this week and this month.
 - **Run**: **Run now** (15-minute cooldown, to protect Gemini spend), **Send test email**, and the time of the last run.
 
@@ -91,8 +92,8 @@ Open `/settings` and enter the admin password. You stay signed in for 7 days (ht
 
 ## Scoring rubric (default weights; each group totals 100)
 
-**Guests: booking score.** Gate: on 2+ distinct India shows in 30 days; not a host of a monitored show; not on the own show in the last 12 months.
-- Spread 40: 2 shows = 20, 3 = 30, 4+ = 40
+**Guests: booking score.** Gate: on N+ distinct India shows in 30 days (spec default N = 2; **set to 1 in this deployment**, editable in Settings as "Guest gate"); not a host of a monitored show; not on the own show in the last 12 months.
+- Spread 40: 1 show = 10, 2 = 20, 3 = 30, 4+ = 40
 - Recency 25: share of appearances in the last 14 days × 25
 - Ahead of the curve 20: 20 if ≤1 appearance before the 30-day window, 10 if 2–3, else 0
 - Fit 15: Gemini 1–5 rating for an audience of independent Indian founders, scaled
@@ -160,8 +161,12 @@ the writer's fact-check, and a guard that fails if the other AI vendor's SDK, AP
 - **YouTube matching** pairs RSS episodes to channel uploads by title and date (with Gemini for retitled uploads), and only
   sees each channel's 15 most recent long-form uploads.
 - **LinkedIn** profiles rarely appear in Google Search grounding, so most guests get the "Search on LinkedIn" fallback.
-- **Guest gate.** With the current shows, a guest must appear on two of them within 30 days. Weeks where that doesn't
-  happen honestly show "Nothing crossed the threshold".
+- **Guest gate.** Across 8 weeks of history (about 120 guest appearances on 10 India shows), no guest appeared on two
+  monitored shows within 30 days, so the spec's 2-show "media rounds" gate always came out empty. The gate is a Settings
+  value and is set to 1 here. "Book this week" then lists the strongest recent guests: single-show guests get 10/40 spread
+  points, and recency, newness and Gemini fit do the ranking. Set it back to 2 in Settings for strict media-rounds detection.
+- **Google Search grounding quota.** LinkedIn/website lookups use Gemini's Google Search tool, which has its own quota.
+  When it is used up, lookups stop for that run, the guest shows "Search on LinkedIn", and the next daily run retries.
 - **Email sender.** Without a verified domain, Resend only delivers to the account owner's address.
 - **Seed list changes.** Three seeded India shows had stopped publishing (The Barbershop, The Desi VC, 100x Entrepreneur)
   and The Ranveer Show's English feed was sparse. They were switched off (history kept) and replaced with

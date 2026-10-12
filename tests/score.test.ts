@@ -95,3 +95,14 @@ describe("applyTags()", () => {
     expect(out.map((x) => `${x.entity_id}:${x.tag}`)).toEqual(["b:Rising", "a:Repeat", "c:New"]);
   });
 });
+
+describe("guest gate setting", () => {
+  it("lists single-show guests when the minimum is 1, with 10 spread points", () => {
+    const d = data([m("solo", "guest", "s1", 2)], [ent("solo", "guest", "Solo Guest", 4)]);
+    expect(score(from, to, DEFAULT_WEIGHTS, d).guests).toEqual([]);
+    const r = score(from, to, DEFAULT_WEIGHTS, d, { guestMinShows: 1 });
+    expect(r.guests.map((g) => g.name)).toEqual(["Solo Guest"]);
+    expect(r.guests[0].components.guest_spread).toBe(10);
+    expect(r.rules?.guest_min_shows).toBe(1);
+  });
+});

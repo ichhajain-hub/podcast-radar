@@ -39,7 +39,7 @@ export function RadarView({ content, full = false }: { content: RadarContent; fu
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Tile n={content.stats.guests_on_media_rounds} label="Guests on media rounds" hint="On 2+ India shows in 30 days" />
+        <Tile n={content.stats.guests_on_media_rounds} label="Guests on media rounds" hint={`On ${content.rules?.guest_min_shows ?? 2}+ India show${(content.rules?.guest_min_shows ?? 2) === 1 ? "" : "s"} in 30 days`} />
         <Tile n={content.stats.brands_spending} label="Brands spending" hint="Paid reads in the last 30 days" />
       </div>
 
@@ -47,7 +47,7 @@ export function RadarView({ content, full = false }: { content: RadarContent; fu
         {guests.map((g, i) => (
           <Item key={g.entity_id} rank={i + 1} item={g} title={g.name}
             subtitle={[g.role, g.company].filter(Boolean).join(", ")}
-            meta={`${g.shows.length} shows · ${g.appearances} appearances`}
+            meta={`${g.shows.length} show${g.shows.length === 1 ? "" : "s"} (${g.shows.join(", ")}) · ${g.appearances} appearance${g.appearances === 1 ? "" : "s"}`}
             links={[
               g.linkedin_url ? { href: g.linkedin_url, label: g.linkedin_verified ? "LinkedIn" : "Search on LinkedIn" } : linkedinSearch(g),
               ...(g.website_url ? [{ href: g.website_url, label: "Company website" }] : []),

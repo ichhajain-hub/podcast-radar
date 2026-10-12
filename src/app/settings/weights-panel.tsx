@@ -9,8 +9,9 @@ const LABELS: Record<string, string> = {
   global_spread: "Global spread", global_not_in_india: "Not yet in India", global_india_translation: "India translation",
 };
 
-export function WeightsPanel({ initial, defaults, groups }: { initial: Record<string, number>; defaults: Record<string, number>; groups: Group[] }) {
+export function WeightsPanel({ initial, defaults, groups, guestMinShows }: { initial: Record<string, number>; defaults: Record<string, number>; groups: Group[]; guestMinShows: number }) {
   const [w, setW] = useState(initial);
+  const [gate, setGate] = useState(guestMinShows);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const totals = Object.fromEntries(groups.map((g) => [g.title, g.keys.reduce((a, k) => a + (Number(w[k]) || 0), 0)]));
@@ -19,7 +20,7 @@ export function WeightsPanel({ initial, defaults, groups }: { initial: Record<st
   async function save(reset = false) {
     setBusy(true);
     setMsg(null);
-    const res = await fetch("/api/settings", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(reset ? { reset_weights: true } : { weights: w }) });
+    const res = await fetch("/api/settings", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(reset ? { reset_weights: true } : { weights: w, guest_min_shows: gate }) });
     const body = await res.json();
     setBusy(false);
     if (res.ok && reset) setW({ ...defaults });
@@ -38,6 +39,14 @@ export function WeightsPanel({ initial, defaults, groups }: { initial: Record<st
           <button onClick={() => save()} disabled={busy || !allOk} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">Save weights</button>
         </div>
       </div>
+      <label className="mt-5 flex flex-wrap items-center gap-3 rounded-xl bg-indigo-50/60 p-4 text-sm">
+        <span className="font-medium">Guest gate:</span> a guest must appear on at least
+        <select value={gate} onChange={(e) => setGate(Number(e.target.value))} className="rounded-md border border-slate-300 bg-white px-2 py-1">
+          {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
+        </select>
+        India show{gate === 1 ? "" : "s"} in 30 days to appear in “Book this week”.
+        <span className="text-slate-500">Spec default is 2 (media rounds); 1 lists every recent guest, ranked.</span>
+      </label>
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         {groups.map((g) => {
           const ok = Math.abs(totals[g.title] - 100) < 0.01;

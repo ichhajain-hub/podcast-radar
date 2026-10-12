@@ -25,12 +25,13 @@ export default async function SettingsPage() {
     );
   }
 
-  const [{ data: shows }, { data: runs }, weights, maxMin, spend] = await Promise.all([
+  const [{ data: shows }, { data: runs }, weights, maxMin, spend, gate] = await Promise.all([
     db().from("shows").select("*").order("region").order("name"),
     db().from("runs").select("id, started_at, finished_at, status, mode").order("started_at", { ascending: false }).limit(1),
     loadWeights(),
     getSetting("deep_read_max_minutes", SETTING_DEFAULTS.deep_read_max_minutes),
     spendSummary(),
+    getSetting("guest_min_shows", SETTING_DEFAULTS.guest_min_shows),
   ]);
 
   return (
@@ -44,7 +45,7 @@ export default async function SettingsPage() {
       </div>
       <RunPanel lastRun={runs?.[0] ?? null} />
       <ShowsPanel initial={(shows ?? []) as Show[]} />
-      <WeightsPanel initial={weights} defaults={{ ...DEFAULT_WEIGHTS }} groups={WEIGHT_GROUPS.map((g) => ({ title: g.title, keys: g.keys }))} />
+      <WeightsPanel initial={weights} defaults={{ ...DEFAULT_WEIGHTS }} groups={WEIGHT_GROUPS.map((g) => ({ title: g.title, keys: g.keys }))} guestMinShows={Number(gate)} />
       <DeepReadPanel
         maxMinutes={Number(maxMin)} priceIn={spend.prices.input} priceOut={spend.prices.output}
         spendWeek={usd(spend.week)} spendMonth={usd(spend.month)}

@@ -11,6 +11,7 @@ const body = z.object({
   deep_read_max_minutes: z.number().int().min(0).max(600).optional(),
   price_input_per_1m: z.number().min(0).max(100).optional(),
   price_output_per_1m: z.number().min(0).max(100).optional(),
+  guest_min_shows: z.number().int().min(1).max(5).optional(),
 });
 
 // Saves weights (each group must total 100) and deep-read / pricing settings. Admin only.
@@ -30,7 +31,7 @@ export async function PUT(req: Request) {
     const { error } = await db().from("weights").upsert(rows);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  for (const k of ["deep_read_max_minutes", "price_input_per_1m", "price_output_per_1m"] as const) {
+  for (const k of ["deep_read_max_minutes", "price_input_per_1m", "price_output_per_1m", "guest_min_shows"] as const) {
     if (b[k] !== undefined) await setSetting(k, b[k]);
   }
   return NextResponse.json({ ok: true, weights: weights ?? null });

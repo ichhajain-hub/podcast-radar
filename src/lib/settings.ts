@@ -6,6 +6,7 @@ export const SETTING_DEFAULTS = {
   deep_read_max_minutes: 170,
   price_input_per_1m: 0.75,
   price_output_per_1m: 3.75,
+  guest_min_shows: 2,
 } as const;
 
 export async function getSetting<T>(key: string, fallback: T): Promise<T> {

@@ -1,5 +1,6 @@
 import { score, type EntityLite, type MentionLite, type ScoreResult, type ScoringData, type ShowLite } from "./score";
 import { db, selectAll } from "./supabase";
+import { getSetting, SETTING_DEFAULTS } from "./settings";
 import { loadWeights, type Weights } from "./weights";
 
 const DAY = 864e5;
@@ -53,6 +54,10 @@ export async function loadScoringData(from: Date, to: Date): Promise<ScoringData
 }
 
 export async function scoreRange(from: Date, to: Date, weights?: Weights): Promise<ScoreResult> {
-  const [data, w] = await Promise.all([loadScoringData(from, to), weights ? Promise.resolve(weights) : loadWeights()]);
-  return score(from, to, w, data);
+  const [data, w, guestMinShows] = await Promise.all([
+    loadScoringData(from, to),
+    weights ? Promise.resolve(weights) : loadWeights(),
+    getSetting("guest_min_shows", SETTING_DEFAULTS.guest_min_shows),
+  ]);
+  return score(from, to, w, data, { guestMinShows: Number(guestMinShows) });
 }

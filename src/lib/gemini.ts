@@ -43,6 +43,7 @@ function errStatus(e: unknown): string {
   const any = e as { status?: number; message?: string };
   return `${any.status ?? ""} ${any.message ?? String(e)}`;
 }
+export const QUOTA_SPENT = /exceeded your current quota/i;
 const RETRYABLE = /\b(429|500|502|503|504)\b|RESOURCE_EXHAUSTED|UNAVAILABLE|overloaded|fetch failed|ECONNRESET/i;
 
 export type CallArgs = {
@@ -71,7 +72,8 @@ export async function callGemini(args: CallArgs): Promise<GenerateContentRespons
       });
       return res;
     } catch (e) {
-      if (attempt < 4 && RETRYABLE.test(errStatus(e))) {
+      // A spent quota (e.g. the daily Google Search grounding allowance) won't recover in seconds: fail fast.
+      if (attempt < 4 && RETRYABLE.test(errStatus(e)) && !QUOTA_SPENT.test(errStatus(e))) {
         await sleep(delay + Math.random() * 500);
         delay *= 2;
         continue;

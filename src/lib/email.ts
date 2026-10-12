@@ -51,7 +51,7 @@ export function renderBriefHtml(c: BriefContent, appUrl = process.env.APP_URL ??
           ? link(g.linkedin_url, g.linkedin_verified ? "LinkedIn" : "Search on LinkedIn")
           : link(`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent([g.name, g.company].filter(Boolean).join(" "))}`, "Search on LinkedIn");
         return item(`<div style="font-size:15px"><b>${esc(g.name)}</b>${g.role || g.company ? ` · ${esc([g.role, g.company].filter(Boolean).join(", "))}` : ""}${tag(g.tag, ...tagColors(g.tag))}${tag(g.action ? g.action : "book")}</div>
-<div style="color:#334155;font-size:14px;margin-top:4px">On ${g.shows.length} shows${g.why_now ? ` · ${esc(g.why_now)}` : ""}</div>
+<div style="color:#334155;font-size:14px;margin-top:4px">On ${g.shows.length} show${g.shows.length === 1 ? "" : "s"} (${esc(g.shows.join(", "))})${g.why_now ? ` · ${esc(g.why_now)}` : ""}</div>
 <div style="font-size:13px;margin-top:6px">${li}${g.website_url ? ` &nbsp;·&nbsp; ${link(g.website_url, "Company website")}` : ""}</div>${sources(g.sources)}`);
       }).join("")
     : empty("");
@@ -86,7 +86,7 @@ export function renderBriefHtml(c: BriefContent, appUrl = process.env.APP_URL ??
 <h1 style="margin:6px 0 4px;font-size:24px">Your Monday radar</h1>
 <div style="font-size:14px;color:${MUTED}">${fmtDay(c.from)} – ${fmtDay(end)} · ${c.stats.shows_scanned} shows scanned · ${c.stats.episodes_scanned} episodes scanned</div>${failed}
 </td></tr>
-<tr><td style="padding-top:20px"><table role="presentation" width="100%" cellpadding="0" cellspacing="8"><tr>${tile(c.stats.guests_on_media_rounds, "Guests on media rounds")}${tile(c.stats.brands_spending, "Brands spending")}</tr></table></td></tr>
+<tr><td style="padding-top:20px"><table role="presentation" width="100%" cellpadding="0" cellspacing="8"><tr>${tile(c.stats.guests_on_media_rounds, `Guests on media rounds (${c.rules?.guest_min_shows ?? 2}+ India show${(c.rules?.guest_min_shows ?? 2) === 1 ? "" : "s"})`)}${tile(c.stats.brands_spending, "Brands spending")}</tr></table></td></tr>
 ${section("Book this week", guests)}
 ${section("Topics to ride or counter", topics + `<h3 style="margin:22px 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:${MUTED}">Global signals · for inspiration</h3>${global}`)}
 ${section("Sponsors to pitch", sponsors)}

@@ -9,6 +9,7 @@ import { addDays, istDayStart, istMonday } from "../src/lib/dates";
 import { clusterTopics, consolidateSince } from "../src/lib/entities";
 import type { ShowRow } from "../src/lib/extract";
 import { rateMissingFits } from "../src/lib/fit";
+import { lookupGuests } from "../src/lib/linkedin";
 import { ingestShow } from "../src/lib/ingest";
 import { scoreRange } from "../src/lib/scoring-data";
 import { db } from "../src/lib/supabase";
@@ -71,6 +72,7 @@ export async function backfill(hooks: Hooks = {}) {
     const week = addDays(thisMonday, -7 * k);
     const scored = await scoreRange(istDayStart(week), istDayStart(addDays(week, 7)));
     await rateMissingFits(scored, run.id);
+    await lookupGuests(scored.guests.slice(0, 3), run.id);
     const { content, skipped } = await buildBrief(week, { runId: run.id, showsFailed: failed, writer: hooks.writer });
     console.log(`  brief ${week}: ${content.guests.length} guests, ${content.topics.length} topics, ${content.sponsors.length} sponsors, ${content.global.length} global, ${content.stats.episodes_scanned} eps${skipped ? ` (${skipped})` : ""}`);
   }
