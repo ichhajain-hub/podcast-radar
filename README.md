@@ -36,7 +36,7 @@ The 11 components, plus global signals:
 | 8 | **Scoring**: one pure function `score(from, to, weights, data)` used by the daily run, the brief and Explore | `src/lib/score.ts`, `src/lib/scoring-data.ts` |
 | 9 | **Brief writer** (`POST /api/brief`): code ranks; Gemini writes "why now", the action and the India angle, fact-checked against each item's sources | `src/lib/brief.ts`, `src/lib/writer.ts`, `src/lib/send.ts` |
 | 10 | **Email** (Resend), white single-accent design | `src/lib/email.ts` |
-| 11 | **Dashboard + history**: `/` (This week so far / Last Monday's brief, date filter As sent / Explore), `/archive`, `/runs`, `GET /api/history` | `src/app/*`, `src/lib/history.ts` |
+| 11 | **Dashboard + history**: `/` (Last Monday's brief / This week so far, date filter: a week with a stored brief shows it as written, any other range is calculated live), `/archive`, `/runs`, `GET /api/history` | `src/app/*`, `src/lib/history.ts` |
 | + | **Global signals**: lead-time score for themes on 2+ global shows not yet on Indian shows | `src/lib/score.ts` |
 
 **How a run flows:** cron → `/api/run` creates a `runs` row and answers immediately. In the background it
@@ -107,7 +107,8 @@ the last 30 days; for a longer date range in Explore it is the whole range.
 - Ahead of the curve 20: 20 if ≤1 appearance before the 30-day window, 10 if 2–3, else 0
 - Fit 15: Gemini 1–5 rating for an audience of independent Indian founders, scaled
 
-**Topics: momentum score.** Gate: 2+ India shows this week.
+**Topics: momentum score.** Gate: 2+ India shows this week, and Gemini rates the theme 3+ out of 5 for relevance to
+independent Indian startup founders (religion, travel, gossip etc. are filtered out). Only shows switched on in Settings count.
 - Spread 40: shows this week (cap 5) scaled
 - Acceleration 30: this week's show count vs the 4-week average (cap 3×) scaled
 - Gap 30: 30 if the own show hasn't covered it in 8 weeks
@@ -145,8 +146,8 @@ place. Every score component is stored in `content_json` and shown on the dashbo
 ## History
 
 Data accumulates permanently from the backfill start (Aug 17, 2026); rows in `episodes`, `mentions`, `entities` and
-`briefs` are never deleted. The dashboard's **As sent** view shows a stored brief exactly as saved. **Explore**
-recomputes any range live with the current weights. `GET /api/history?from=YYYY-MM-DD&to=YYYY-MM-DD&view=sent|explore`
+`briefs` are never deleted. In the dashboard's date filter, a week that has a stored Monday brief shows that brief exactly
+as written; any other range (this week, last 30 days, a custom range) is recalculated live with the current weights. `GET /api/history?from=YYYY-MM-DD&to=YYYY-MM-DD&view=sent|explore`
 exposes the same data.
 
 ## Tests

@@ -90,8 +90,8 @@
 <text x="1275.0" y="81.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Reads Monday brief: book ·</text>
 <text x="1275.0" y="94.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">ride/counter · pitch</text>
 <rect x="1183.0" y="120.0" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
-<text x="1275.0" y="139.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Browses dashboard by date</text>
-<text x="1275.0" y="152.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">(As sent / Explore)</text>
+<text x="1275.0" y="139.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Browses past briefs and</text>
+<text x="1275.0" y="152.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">live views by date</text>
 <rect x="183.0" y="200.0" width="184" height="57" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
 <text x="275.0" y="219.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Daily 5:30 AM IST run;</text>
 <text x="275.0" y="232.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Monday run also sends the</text>

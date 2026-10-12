@@ -98,7 +98,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
         <tr><td class="n">9</td><td>Store</td><td><span class="tag">Supabase Postgres</span></td><td>Permanent history: shows, weights, settings, episodes, entities, mentions, briefs, runs (with token usage)</td></tr>
         <tr><td class="n">10</td><td>Scoring engine</td><td><span class="tag">TypeScript score()</span></td><td>Gates, weighted scores out of 100, New / Rising / Repeat; one function for daily, weekly and history views</td></tr>
         <tr><td class="n">11</td><td>Brief writer</td><td><span class="tag g">Gemini Flash</span></td><td>"Why now" lines and India angles using only each item's sources; rejected and retried if it names anything else</td></tr>
-        <tr><td class="n">12</td><td>Delivery</td><td><span class="tag">Resend + dashboard</span></td><td>Monday email; dashboard with date filter (As sent / Explore), archive and run log</td></tr>
+        <tr><td class="n">12</td><td>Delivery</td><td><span class="tag">Resend + dashboard</span></td><td>Monday email; dashboard with date filter (stored brief or live view), archive and run log</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -113,7 +113,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
         <tr><td>Deployed on Vercel</td><td>App, API routes and crons on Vercel; public URL and public GitHub repo</td><td>2, 3, 12</td></tr>
         <tr><td>10 shows, configurable without code</td><td>Settings page with add / edit / switch-off and a live feed check; changes apply on the next run</td><td>1</td></tr>
         <tr><td>Guests on multiple shows in the same month</td><td>30-day cross-show count; a "Doing media rounds" block lists every guest on 2+ India shows, and "Book this week" ranks founders who are ahead of the curve</td><td>7, 10</td></tr>
-        <tr><td>Topics across shows</td><td>Weekly show count, acceleration vs the 4-week average, ride / counter tag, plus global signals not yet covered in India</td><td>10</td></tr>
+        <tr><td>Topics across shows</td><td>Weekly show count, acceleration vs the 4-week average, a founder-relevance check, ride / counter tag, plus global signals not yet covered in India</td><td>10</td></tr>
         <tr><td>Brands mentioned or promoted</td><td>Show notes plus spoken reads, tagged paid or organic, with timestamped links</td><td>5, 6, 10</td></tr>
         <tr><td>Brief every Monday morning</td><td>Monday 5:30 AM IST cron; email via Resend, arriving before 7:30 AM IST</td><td>2, 12</td></tr>
       </tbody>

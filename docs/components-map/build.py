@@ -23,7 +23,7 @@ LANES = [
 NODES = [
     ("A1", "aditya", "TRIGGER", "Edits shows, weights & deep-read cap in Settings", False),
     ("A2", "aditya", "OUTPUT", "Reads Monday brief: book · ride/counter · pitch", False),
-    ("A3", "aditya", "OUTPUT", "Browses dashboard by date (As sent / Explore)", False),
+    ("A3", "aditya", "OUTPUT", "Browses past briefs and live views by date", False),
     ("C1", "cron", "TRIGGER", "Daily 5:30 AM IST run; Monday run also sends the brief", False),
     ("P1", "app", "INPUT", "Run orchestrator: one job per show, 3 at a time", False),
     ("P2", "app", "PROCESSING", "score(): gates, weights, New / Rising / Repeat", False),
