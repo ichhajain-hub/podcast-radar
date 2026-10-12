@@ -2,6 +2,7 @@ import { EntityResolver } from "./entities";
 import { extractBatch, type EpisodeForExtraction, type ShowRow } from "./extract";
 import { fetchFeed } from "./rss";
 import { db } from "./supabase";
+import { matchShowVideos } from "./youtube";
 
 export const WINDOW_DAYS: Record<ShowRow["region"], number> = { india: 30, own: 30, global: 14 };
 const BATCH = 8;
@@ -16,6 +17,8 @@ export type IngestResult = {
   pending_extraction: number;
   mentions: { guests: number; topics: number; brands: number };
   ms: number;
+  youtube_matched?: number;
+  youtube_error?: string;
   error?: string;
 };
 
@@ -51,6 +54,15 @@ export async function ingestShow(
       .select("id");
     if (error) throw new Error(`saving episodes: ${error.message}`);
     res.new_episodes = data?.length ?? 0;
+  }
+
+  // India shows: link episodes to their YouTube videos (for the sponsor deep-read).
+  if (show.region === "india" && show.youtube_channel_url) {
+    try {
+      res.youtube_matched = await matchShowVideos(show, since, runId);
+    } catch (e) {
+      res.youtube_error = (e as Error).message.slice(0, 200);
+    }
   }
 
   const { data: todo, error } = await db()

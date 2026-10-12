@@ -3,7 +3,9 @@ import { addDays, istDayStart, istMonday } from "./dates";
 import { clusterTopics, consolidateSince } from "./entities";
 import { rateMissingFits } from "./fit";
 import { fetchStatus, ingestShow, type IngestResult } from "./ingest";
+import { deepReadQueue, type DeepReadResult } from "./deepread";
 import { kickAndWait } from "./internal";
+import { lookupGuests } from "./linkedin";
 import type { ShowRow } from "./extract";
 import { scoreRange } from "./scoring-data";
 import { db } from "./supabase";
@@ -38,16 +40,20 @@ export async function startRun(mode: RunMode, trigger: "cron" | "admin"): Promis
 export class CooldownError extends Error {}
 
 /**
- * Calls POST /api/ingest/[showId] for every active show, 3 at a time. Each ingest is its own
- * function invocation, so no single function does all the work. Then finalizes the run.
+ * The run, inside one function invocation (≤ 300 s on Vercel Hobby):
+ *  1. POST /api/ingest/[showId] for every active show, 3 at a time (each its own function call)
+ *  2. POST /api/deepread/[episodeId] for queued India videos, 2 at a time, while time remains;
+ *     the rest stay queued for the next daily run
+ *  3. POST /api/run/finalize, which rescores (and in weekly mode writes the brief) in its own invocation
  */
 export async function runPipeline(runId: string) {
+  const t0 = Date.now();
+  const elapsed = () => Date.now() - t0;
   const { data: shows } = await db().from("shows").select("id, name").eq("active", true).order("region").order("name");
   const queue = [...(shows ?? [])];
-  const t0 = Date.now();
-  const worker = async () => {
+  const ingestWorker = async () => {
     for (let s = queue.shift(); s; s = queue.shift()) {
-      if (Date.now() - t0 > DISPATCH_BUDGET_MS) {
+      if (elapsed() > INGEST_BUDGET_MS) {
         await recordShow(runId, s.id, s.name, null, "skipped: run time budget used up; will be picked up next run");
         continue;
       }
@@ -59,20 +65,45 @@ export async function runPipeline(runId: string) {
       }
     }
   };
-  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-  await db().from("runs").update({ status: "finalizing" }).eq("id", runId);
-  await finalizeRun(runId);
+  await Promise.all(Array.from({ length: CONCURRENCY }, ingestWorker));
+
+  // Sponsor deep-reads: max 2 in parallel (spec 5.4); unfinished ones retry on the next run.
+  const videos = await deepReadQueue(new Date(Date.now() - 30 * 864e5).toISOString());
+  const deep: DeepReadResult[] = [];
+  const deepWorker = async () => {
+    for (let id = videos.shift(); id; id = videos.shift()) {
+      if (elapsed() > DEEP_READ_START_BY_MS) break;
+      try {
+        deep.push(await kickAndWait<DeepReadResult>(`/api/deepread/${id}`, { runId }, Math.max(10_000, RUN_END_MS - elapsed())));
+      } catch (e) {
+        deep.push({ episode_id: id, ok: false, brands: 0, minutes_cap: 0, note: `still running or failed: ${(e as Error).message}` });
+      }
+    }
+  };
+  await Promise.all([deepWorker(), deepWorker()]);
+  const { data: cur } = await db().from("runs").select("log").eq("id", runId).single();
+  await db().from("runs").update({
+    status: "finalizing",
+    log: { ...(cur?.log ?? {}), deep_reads: deep, deep_read_queue_left: videos.length },
+  }).eq("id", runId);
+
+  await kickAndWait("/api/run/finalize", { runId }, 20_000).catch(async (e) => {
+    await db().from("runs").update({ status: "error", finished_at: new Date().toISOString() }).eq("id", runId);
+    console.error("finalize kick failed", e);
+  });
 }
 
-const DISPATCH_BUDGET_MS = 190_000;
+const INGEST_BUDGET_MS = 150_000;
 const INGEST_TIMEOUT_MS = 170_000;
+const DEEP_READ_START_BY_MS = 200_000;
+const RUN_END_MS = 270_000;
 
 /** Ingests one show (called by /api/ingest/[showId]). Never throws: errors come back in the result. */
 export async function ingestOne(runId: string | null, showId: string): Promise<IngestResult> {
   const { data: show } = await db().from("shows").select("*").eq("id", showId).single();
   if (!show) return failed("unknown show", "show not found");
   try {
-    return await ingestShow(show as ShowRow, { runId, budgetMs: 120_000 });
+    return await ingestShow(show as ShowRow, { runId, budgetMs: 110_000 });
   } catch (e) {
     return failed(show.name, (e as Error).message);
   }
@@ -107,7 +138,9 @@ export async function finalizeRun(runId: string) {
     // Rate fit for anything that could appear on the dashboard or in this Monday's brief.
     const lastWeek = istDayStart(addDays(istMonday(now), -7));
     for (const [from, to] of [[new Date(now.getTime() - 7 * 864e5), now], [lastWeek, istDayStart(istMonday(now))]]) {
-      notes.fit_rated = await rateMissingFits(await scoreRange(from, to), runId);
+      const result = await scoreRange(from, to);
+      notes.fit_rated = await rateMissingFits(result, runId);
+      notes.linkedin_lookups = await lookupGuests(result.guests.slice(0, 6), runId);
     }
     if (run.mode === "weekly") {
       const week = addDays(istMonday(now), -7);

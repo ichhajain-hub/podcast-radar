@@ -1,8 +1,8 @@
 // Backfill (spec section 11): ingest the last 8 weeks for every active show, then build and
 // store a brief for each of those 8 weeks so the dashboard's "As sent" history is real.
-// No emails are sent. YouTube deep-reads (Layer 3) only run for the most recent 2 weeks.
+// No emails are sent. YouTube sponsor deep-reads only run for the most recent 2 weeks (cost).
 //
-// Run:  node --env-file=.env.local --import tsx scripts/backfill.ts [--weeks 8] [--briefs-only]
+// Run:  node --env-file=.env.local --import tsx scripts/backfill.ts [--weeks 8] [--briefs-only] [--no-deep-read]
 
 import { buildBrief, type Writer } from "../src/lib/brief";
 import { addDays, istDayStart, istMonday } from "../src/lib/dates";
@@ -12,6 +12,8 @@ import { rateMissingFits } from "../src/lib/fit";
 import { ingestShow } from "../src/lib/ingest";
 import { scoreRange } from "../src/lib/scoring-data";
 import { db } from "../src/lib/supabase";
+import { deepRead, deepReadQueue } from "../src/lib/deepread";
+import { matchShowVideos } from "../src/lib/youtube";
 
 const arg = (name: string) => process.argv.includes(name);
 const weeksArg = process.argv.indexOf("--weeks");
@@ -79,8 +81,36 @@ export async function backfill(hooks: Hooks = {}) {
   console.log(`Done. ${ok.length} shows ok, ${failed.length} failed. Gemini tokens: ${tokens.toLocaleString()}`);
 }
 
+/** Default deep-read hook: link YouTube videos and deep-read the most recent 2 weeks only (cost control). */
+async function deepReadRecent(show: ShowRow, since: string, runId: string) {
+  const sinceIso = istDayStart(since).toISOString();
+  await matchShowVideos(show, sinceIso, runId);
+  const queue = (await deepReadQueue(sinceIso, 100)).filter(Boolean);
+  const { data: mine } = await db().from("episodes").select("id").eq("show_id", show.id).in("id", queue.length ? queue : ["00000000-0000-0000-0000-000000000000"]);
+  const ids = (mine ?? []).map((e) => e.id as string);
+  await Promise.all(ids.map((id) => withSlot(async () => {
+    const r = await deepRead(id, runId);
+    console.log(`    deep-read ${show.name}: ${r.ok ? `${r.brands} brands` : `failed (${r.note})`}`);
+  })));
+}
+
+// At most 2 deep-reads in flight across all shows (spec 5.4).
+let slots = 2;
+const waiting: (() => void)[] = [];
+async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (slots === 0) await new Promise<void>((r) => waiting.push(r));
+  else slots--;
+  try {
+    return await fn();
+  } finally {
+    const next = waiting.shift();
+    if (next) next();
+    else slots++;
+  }
+}
+
 if (process.argv[1]?.endsWith("backfill.ts")) {
-  backfill().catch((e) => {
+  backfill(arg("--no-deep-read") ? {} : { deepRead: deepReadRecent }).catch((e) => {
     console.error(e);
     process.exit(1);
   });
