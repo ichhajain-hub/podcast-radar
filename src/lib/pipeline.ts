@@ -1,6 +1,6 @@
 import { rateMissingFits } from "./fit";
 import { fetchStatus, ingestShow, type IngestResult } from "./ingest";
-import { kick } from "./internal";
+import { kickAndWait } from "./internal";
 import type { ShowRow } from "./extract";
 import { scoreRange } from "./scoring-data";
 import { db } from "./supabase";
@@ -9,7 +9,7 @@ export type RunMode = "daily" | "weekly";
 const CONCURRENCY = 3;
 const COOLDOWN_MIN = 15;
 
-/** Creates a run, queues active shows and starts the first 3 ingests. */
+/** Creates a run row for the active shows. The work itself happens in runPipeline(). */
 export async function startRun(mode: RunMode, trigger: "cron" | "admin"): Promise<{ runId: string; shows: number }> {
   // Any run stuck for 20+ minutes (e.g. a timed-out function) is closed so it doesn't block.
   const staleBefore = new Date(Date.now() - 20 * 60_000).toISOString();
@@ -23,64 +23,70 @@ export async function startRun(mode: RunMode, trigger: "cron" | "admin"): Promis
     if (waitMin > 0) throw new CooldownError(`A run started less than ${COOLDOWN_MIN} minutes ago. Try again in ${waitMin} min.`);
   }
 
-  const { data: shows, error } = await db().from("shows").select("id, name").eq("active", true).order("region").order("name");
+  const { count, error } = await db().from("shows").select("id", { count: "exact", head: true }).eq("active", true);
   if (error) throw new Error(error.message);
-  const ids = (shows ?? []).map((s) => s.id as string);
-
   const { data: run, error: runErr } = await db().from("runs")
-    .insert({ status: "running", mode, total: ids.length, pending: ids.slice(CONCURRENCY), log: { trigger, shows: [], usage: [] } })
+    .insert({ status: "running", mode, total: count ?? 0, log: { trigger, shows: [], usage: [] } })
     .select("id").single();
   if (runErr) throw new Error(runErr.message);
-
-  if (!ids.length) await kick("/api/run/finalize", { runId: run.id });
-  for (const id of ids.slice(0, CONCURRENCY)) await startIngest(run.id, id);
-  return { runId: run.id, shows: ids.length };
+  return { runId: run.id, shows: count ?? 0 };
 }
 
 export class CooldownError extends Error {}
 
-async function startIngest(runId: string, showId: string) {
-  try {
-    await kick(`/api/ingest/${showId}`, { runId });
-  } catch (e) {
-    // Couldn't start that show: record it as failed and move the queue on.
-    await finishShow(runId, showId, "unknown", null, (e as Error).message);
-  }
-}
-
-/** Ingests one show inside a run, then hands the queue on and finalizes when all are done. */
-export async function processShowInRun(runId: string, showId: string) {
-  const { data: show } = await db().from("shows").select("*").eq("id", showId).single();
-  if (!show) return finishShow(runId, showId, "unknown show", null, "show not found");
-  let result: IngestResult;
-  try {
-    result = await ingestShow(show as ShowRow, { runId });
-  } catch (e) {
-    return finishShow(runId, showId, show.name, null, (e as Error).message);
-  }
-  return finishShow(runId, showId, show.name, result, null);
-}
-
-async function finishShow(runId: string, showId: string, name: string, result: IngestResult | null, error: string | null) {
-  const entry: IngestResult = result ?? {
-    show: name, ok: false, feed_episodes: 0, in_window: 0, new_episodes: 0, extracted: 0,
-    pending_extraction: 0, mentions: { guests: 0, topics: 0, brands: 0 }, ms: 0, error: error ?? "failed",
+/**
+ * Calls POST /api/ingest/[showId] for every active show, 3 at a time. Each ingest is its own
+ * function invocation, so no single function does all the work. Then finalizes the run.
+ */
+export async function runPipeline(runId: string) {
+  const { data: shows } = await db().from("shows").select("id, name").eq("active", true).order("region").order("name");
+  const queue = [...(shows ?? [])];
+  const t0 = Date.now();
+  const worker = async () => {
+    for (let s = queue.shift(); s; s = queue.shift()) {
+      if (Date.now() - t0 > DISPATCH_BUDGET_MS) {
+        await recordShow(runId, s.id, s.name, null, "skipped: run time budget used up; will be picked up next run");
+        continue;
+      }
+      try {
+        const result = await kickAndWait<IngestResult>(`/api/ingest/${s.id}`, { runId }, INGEST_TIMEOUT_MS);
+        await recordShow(runId, s.id, s.name, result, result.ok ? null : result.error ?? "failed");
+      } catch (e) {
+        await recordShow(runId, s.id, s.name, null, (e as Error).message);
+      }
+    }
   };
-  if (name !== "unknown" && name !== "unknown show") {
-    await db().from("shows").update({ last_fetch_status: fetchStatus(entry) }).eq("id", showId);
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  await db().from("runs").update({ status: "finalizing" }).eq("id", runId);
+  await finalizeRun(runId);
+}
+
+const DISPATCH_BUDGET_MS = 190_000;
+const INGEST_TIMEOUT_MS = 170_000;
+
+/** Ingests one show (called by /api/ingest/[showId]). Never throws: errors come back in the result. */
+export async function ingestOne(runId: string | null, showId: string): Promise<IngestResult> {
+  const { data: show } = await db().from("shows").select("*").eq("id", showId).single();
+  if (!show) return failed("unknown show", "show not found");
+  try {
+    return await ingestShow(show as ShowRow, { runId, budgetMs: 120_000 });
+  } catch (e) {
+    return failed(show.name, (e as Error).message);
   }
-  const { data: remaining, error: markErr } = await db().rpc("run_mark_show", {
-    p_run: runId, p_name: name, p_ok: entry.ok, p_entry: entry,
-  });
+}
+
+function failed(name: string, error: string): IngestResult {
+  return {
+    show: name, ok: false, feed_episodes: 0, in_window: 0, new_episodes: 0, extracted: 0,
+    pending_extraction: 0, mentions: { guests: 0, topics: 0, brands: 0 }, ms: 0, error,
+  };
+}
+
+async function recordShow(runId: string, showId: string, name: string, result: IngestResult | null, error: string | null) {
+  const entry = result ?? failed(name, error ?? "failed");
+  await db().from("shows").update({ last_fetch_status: fetchStatus(entry) }).eq("id", showId);
+  const { error: markErr } = await db().rpc("run_mark_show", { p_run: runId, p_name: name, p_ok: entry.ok, p_entry: entry });
   if (markErr) console.error("run_mark_show", markErr.message);
-
-  const { data: next } = await db().rpc("run_claim_next", { p_run: runId });
-  if (next) await startIngest(runId, next as string);
-
-  if (remaining === 0) {
-    const { data: won } = await db().rpc("run_try_finalize", { p_run: runId });
-    if (won) await kick("/api/run/finalize", { runId }).catch((e) => console.error("finalize kick", e));
-  }
 }
 
 /** After all shows: rescore (rate any new candidates' fit). Weekly mode also writes the brief (Layer 4). */
