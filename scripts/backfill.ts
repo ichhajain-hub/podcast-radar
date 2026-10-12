@@ -14,6 +14,7 @@ import { scoreRange } from "../src/lib/scoring-data";
 import { db } from "../src/lib/supabase";
 import { deepRead, deepReadQueue } from "../src/lib/deepread";
 import { matchShowVideos } from "../src/lib/youtube";
+import { writeBrief } from "../src/lib/writer";
 
 const arg = (name: string) => process.argv.includes(name);
 const weeksArg = process.argv.indexOf("--weeks");
@@ -110,7 +111,7 @@ async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 if (process.argv[1]?.endsWith("backfill.ts")) {
-  backfill(arg("--no-deep-read") ? {} : { deepRead: deepReadRecent }).catch((e) => {
+  backfill({ writer: writeBrief, ...(arg("--no-deep-read") ? {} : { deepRead: deepReadRecent }) }).catch((e) => {
     console.error(e);
     process.exit(1);
   });

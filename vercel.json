@@ -1,3 +1,7 @@
 {
-  "regions": ["bom1"]
+  "regions": ["bom1"],
+  "crons": [
+    { "path": "/api/run?mode=daily", "schedule": "0 0 * * *" },
+    { "path": "/api/run?mode=weekly", "schedule": "0 1 * * 1" }
+  ]
 }

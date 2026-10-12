@@ -5,6 +5,11 @@ import { db } from "@/lib/supabase";
 import { LoginForm } from "./login-form";
 import { ShowsPanel, type Show } from "./shows-panel";
 import { RunPanel } from "./run-panel";
+import { WeightsPanel } from "./weights-panel";
+import { DeepReadPanel } from "./deep-read-panel";
+import { DEFAULT_WEIGHTS, loadWeights, WEIGHT_GROUPS } from "@/lib/weights";
+import { getSetting, SETTING_DEFAULTS } from "@/lib/settings";
+import { spendSummary, usd } from "@/lib/spend";
 
 export const metadata: Metadata = { title: "Settings · Podcast Radar" };
 export const dynamic = "force-dynamic";
@@ -20,9 +25,12 @@ export default async function SettingsPage() {
     );
   }
 
-  const [{ data: shows }, { data: runs }] = await Promise.all([
+  const [{ data: shows }, { data: runs }, weights, maxMin, spend] = await Promise.all([
     db().from("shows").select("*").order("region").order("name"),
     db().from("runs").select("id, started_at, finished_at, status, mode").order("started_at", { ascending: false }).limit(1),
+    loadWeights(),
+    getSetting("deep_read_max_minutes", SETTING_DEFAULTS.deep_read_max_minutes),
+    spendSummary(),
   ]);
 
   return (
@@ -36,6 +44,12 @@ export default async function SettingsPage() {
       </div>
       <RunPanel lastRun={runs?.[0] ?? null} />
       <ShowsPanel initial={(shows ?? []) as Show[]} />
+      <WeightsPanel initial={weights} defaults={{ ...DEFAULT_WEIGHTS }} groups={WEIGHT_GROUPS.map((g) => ({ title: g.title, keys: g.keys }))} />
+      <DeepReadPanel
+        maxMinutes={Number(maxMin)} priceIn={spend.prices.input} priceOut={spend.prices.output}
+        spendWeek={usd(spend.week)} spendMonth={usd(spend.month)}
+        tokensWeek={spend.weekTokens.toLocaleString("en-IN")} tokensMonth={spend.monthTokens.toLocaleString("en-IN")}
+      />
     </main>
   );
 }

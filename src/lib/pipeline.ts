@@ -1,4 +1,3 @@
-import { buildBrief } from "./brief";
 import { addDays, istDayStart, istMonday } from "./dates";
 import { clusterTopics, consolidateSince } from "./entities";
 import { rateMissingFits } from "./fit";
@@ -6,6 +5,7 @@ import { fetchStatus, ingestShow, type IngestResult } from "./ingest";
 import { deepReadQueue, type DeepReadResult } from "./deepread";
 import { kickAndWait } from "./internal";
 import { lookupGuests } from "./linkedin";
+import { writeAndSendBrief } from "./send";
 import type { ShowRow } from "./extract";
 import { scoreRange } from "./scoring-data";
 import { db } from "./supabase";
@@ -146,8 +146,8 @@ export async function finalizeRun(runId: string) {
     if (run.mode === "weekly") {
       const week = addDays(istMonday(now), -7);
       const { data: latest } = await db().from("runs").select("shows_failed").eq("id", runId).single();
-      const brief = await buildBrief(week, { runId, showsFailed: latest?.shows_failed ?? [] });
-      notes.brief = { week_start: week, skipped: brief.skipped ?? null };
+      // Same code path as POST /api/brief, run in-process (a further self-call would trip Vercel's loop guard).
+      notes.brief = await writeAndSendBrief({ week, runId, showsFailed: latest?.shows_failed ?? [] });
     }
   } catch (e) {
     notes.finalize_error = (e as Error).message;

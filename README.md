@@ -1,36 +1,168 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Podcast Ecosystem Radar
 
-## Getting Started
+**Live:** https://podcast-radar-psi.vercel.app · **Settings:** https://podcast-radar-psi.vercel.app/settings
 
-First, run the development server:
+Every Monday before 7:30 AM IST, this app emails a podcast host a one-page radar built from the
+last week of **live** podcast data:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Book this week**: guests doing the rounds on 2+ Indian business podcasts.
+- **Topics to ride or counter**: themes several Indian shows covered this week.
+- **Global signals · for inspiration**: themes trending on global shows that India hasn't picked up yet.
+- **Sponsors to pitch**: brands buying spoken ad reads, including timestamped reads found by watching the YouTube video.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Every item links back to the episodes it came from ("Sources (n)"), and every score can be expanded
+to show why it ranked where it did. **All AI work uses Google Gemini Flash** (model from `GEMINI_MODEL`, currently `gemini-3.8-flash`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Architecture
 
-## Learn More
+Next.js (App Router, TypeScript, Tailwind) on Vercel · Supabase Postgres · Gemini via `@google/genai` · Resend · Vercel Cron.
 
-To learn more about Next.js, take a look at the following resources:
+The 11 components, plus global signals:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| # | Component | Where |
+|---|-----------|-------|
+| 1 | **Settings dashboard**: password-protected show list, weights, deep-read cap, prices, Run now, test email | `src/app/settings/*`, `src/app/api/shows/*`, `src/app/api/settings` |
+| 2 | **Orchestrator**: `GET /api/run?mode=daily\|weekly`; calls one ingest per show, 3 at a time | `src/app/api/run`, `src/lib/pipeline.ts` |
+| 3 | **RSS ingest**: `POST /api/ingest/[showId]`; fetches the live feed, keeps 30 days (India/own) or 14 days (global) | `src/lib/rss.ts`, `src/lib/ingest.ts` |
+| 4 | **Extraction** (Gemini, JSON schema + zod, retry once): guests, topics + stance, brands; batches of 8 | `src/lib/extract.ts`, `src/lib/gemini.ts` |
+| 5 | **YouTube matching + sponsor deep-read** (Gemini watches the public video at LOW media resolution); `POST /api/deepread/[episodeId]`, one video per call, max 2 in parallel | `src/lib/youtube.ts`, `src/lib/deepread.ts` |
+| 6 | **Entity resolution** (Gemini): new names vs existing canonical names → match or NEW; topic themes grouped; duplicates linked via `merged_into` (never deleted) | `src/lib/entities.ts` |
+| 7 | **LinkedIn / website lookup** (Gemini + Google Search grounding); a URL is kept only if it is in the grounding sources | `src/lib/linkedin.ts` |
+| 8 | **Scoring**: one pure function `score(from, to, weights, data)` used by the daily run, the brief and Explore | `src/lib/score.ts`, `src/lib/scoring-data.ts` |
+| 9 | **Brief writer** (`POST /api/brief`): code ranks; Gemini writes "why now", the action and the India angle, fact-checked against each item's sources | `src/lib/brief.ts`, `src/lib/writer.ts`, `src/lib/send.ts` |
+| 10 | **Email** (Resend), white single-accent design | `src/lib/email.ts` |
+| 11 | **Dashboard + history**: `/` (This week so far / Last Monday's brief, date filter As sent / Explore), `/archive`, `/runs`, `GET /api/history` | `src/app/*`, `src/lib/history.ts` |
+| + | **Global signals**: lead-time score for themes on 2+ global shows not yet on Indian shows | `src/lib/score.ts` |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**How a run flows:** cron → `/api/run` creates a `runs` row and answers immediately. In the background it
+(1) calls `/api/ingest/[showId]` for every active show, 3 at a time; (2) calls `/api/deepread/[episodeId]`
+for queued India videos, 2 at a time, while time remains (the rest wait for the next run);
+(3) calls `/api/run/finalize`, which merges duplicate names, rates fit, looks up LinkedIn for gated guests,
+and in **weekly** mode writes, stores and emails the brief. A show whose feed fails is recorded in
+`runs.shows_failed` and named in the brief; the run carries on.
 
-## Deploy on Vercel
+**Schedule (`vercel.json`):** daily `0 0 * * *` (5:30 AM IST) refreshes the dashboard, with no email.
+Weekly `0 1 * * 1` (Monday 6:30 AM IST) writes and sends the brief.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Setup
+
+1. Create a Supabase project and run the SQL in `supabase/migrations/` in order (0001 → 0004).
+2. Create a Gemini API key (Google AI Studio), a Resend API key, and a Vercel project linked to this repo.
+3. Set the environment variables below in Vercel (Production + Preview) and in `.env.local` for local scripts.
+4. Deploy. Open `/settings`, sign in, and press **Run now**.
+5. Optional, once: build 8 weeks of history (no emails sent):
+   `node --env-file=.env.local --import tsx scripts/backfill.ts`
+   (flags: `--weeks 8`, `--briefs-only`, `--no-deep-read`). YouTube deep-reads only run for the most recent 2 weeks, to control cost.
+
+### Environment variables
+
+| Name | What it is |
+|------|------------|
+| `GEMINI_API_KEY` | Google Gemini API key (paid tier) |
+| `GEMINI_MODEL` | Gemini Flash model id used for **every** AI call, e.g. `gemini-3.8-flash` |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase secret/service-role key (server only) |
+| `RESEND_API_KEY` | Resend API key (sending access) |
+| `BRIEF_RECIPIENT_EMAIL` | Who receives the Monday brief (comma-separate several) |
+| `BRIEF_FROM_EMAIL` | Sender, e.g. `Podcast Radar <onboarding@resend.dev>` |
+| `CRON_SECRET` | Random string; Vercel Cron sends it as `Authorization: Bearer …`, and internal calls use it too |
+| `ADMIN_PASSWORD` | Password for `/settings` |
+| `APP_URL` | Public URL, used for links in the email |
+
+---
+
+## Using Settings (no code, no redeploy)
+
+Open `/settings` and enter the admin password. You stay signed in for 7 days (httpOnly cookie). Every write API checks it.
+
+- **Shows**: add, edit, delete, or switch shows on and off inline. Saving fetches the RSS feed server-side and shows the latest
+  episode title, or a clear error. Counts show `India: 10/10 · Global: 5 · Own: 1`, with a warning if India ≠ 10.
+  A show with stored history can only be switched off, not deleted (history is permanent).
+  Add a **YouTube channel URL** for India shows so their videos can be deep-read for sponsors.
+- **Scoring weights**: one number per component, grouped, with a live "total = 100" check and **Reset to defaults**.
+- **YouTube deep-read & spend**: max minutes per video (0 = full video), Gemini prices per 1M tokens, and estimated spend this week and this month.
+- **Run**: **Run now** (15-minute cooldown, to protect Gemini spend), **Send test email**, and the time of the last run.
+
+---
+
+## Scoring rubric (default weights; each group totals 100)
+
+**Guests: booking score.** Gate: on 2+ distinct India shows in 30 days; not a host of a monitored show; not on the own show in the last 12 months.
+- Spread 40: 2 shows = 20, 3 = 30, 4+ = 40
+- Recency 25: share of appearances in the last 14 days × 25
+- Ahead of the curve 20: 20 if ≤1 appearance before the 30-day window, 10 if 2–3, else 0
+- Fit 15: Gemini 1–5 rating for an audience of independent Indian founders, scaled
+
+**Topics: momentum score.** Gate: 2+ India shows this week.
+- Spread 40: shows this week (cap 5) scaled
+- Acceleration 30: this week's show count vs the 4-week average (cap 3×) scaled
+- Gap 30: 30 if the own show hasn't covered it in 8 weeks
+- Label: **counter** if 3+ shows share the same stance, else **ride**
+
+**Sponsors: pitch score.** Gate: confidence ≥ 0.7; not the show's own product or network.
+- Spend 40: any paid read = 40, organic only = 10
+- Breadth 25: distinct shows in 30 days (cap 4) scaled
+- Recency 20: 20 if first seen in the last 14 days, else 5
+- Fit 15: Gemini 1–5 founder-audience fit, scaled
+
+**Global signals: lead-time score.** Gate: 2+ global shows in 14 days.
+- Spread 35: global shows (cap 4) scaled
+- Not in India 35: 35 if 0 India shows in 30 days, 15 if 1, else 0
+- India translation 30: Gemini 1–5 rating, scaled
+
+The brief shows the top 3 guests, top 3 topics, top 3 sponsors and top 2 global signals, each tagged **New**,
+**Rising** (score up) or **Repeat** against last week's brief. An item that is Repeat for the 3rd week in a row drops one
+place. Every score component is stored in `content_json` and shown on the dashboard.
+
+---
+
+## How sources work
+
+- Each item carries `sources: [{ show_name, episode_title, url, published_at, timestamp_seconds?, evidence }]`.
+  Guests list every episode they appeared on, topics every episode that covered them, and sponsors every episode with the read.
+  YouTube links open at the read (`&t=<seconds>s`).
+- `evidence` is a short quote (≤ 15 words) from the show notes or video that proves the mention.
+- **An item with zero sources is dropped.**
+- Gemini's "why now" and India-angle lines may only use names and numbers from that item's own facts. Each line
+  is checked in code; a failing line is retried once and otherwise replaced by a plain line built from the facts.
+- LinkedIn: a profile link is shown as **LinkedIn** only if it appeared in Google Search grounding sources
+  (`linkedin_verified = true`); otherwise **Search on LinkedIn** (a people-search URL). No emails or phone numbers are collected.
+
+## History
+
+Data accumulates permanently from the backfill start (Aug 17, 2026); rows in `episodes`, `mentions`, `entities` and
+`briefs` are never deleted. The dashboard's **As sent** view shows a stored brief exactly as saved. **Explore**
+recomputes any range live with the current weights. `GET /api/history?from=YYYY-MM-DD&to=YYYY-MM-DD&view=sent|explore`
+exposes the same data.
+
+## Tests
+
+`npm test` runs: scoring rules and gates, weight changes changing the ranking, New/Rising/Repeat tagging,
+the writer's fact-check, and a guard that fails if the other AI vendor's SDK, API host or name appears anywhere in the repo.
+
+---
+
+## Known limitations
+
+- **Audio-only shows have no spoken sponsor detection.** Deep-read needs a public YouTube video (Paisa Vaisa has no
+  channel, for example); those shows rely on show notes only.
+- **Deep-read minute cap.** Gemini reads each video up to the cap set in Settings (currently 60 minutes, about $0.31 per video).
+  Sponsor reads after the cap are missed. Set 0 to read full videos (a 3-hour episode is about 1M tokens at low resolution).
+- **Vercel Hobby limits.** Crons can fire anywhere within the scheduled hour (the dashboard shows "Last refreshed").
+  Functions run for at most 5 minutes, so each run deep-reads as many videos as fit and queues the rest for the next day.
+  Very large feeds (20VC, about 12 MB) are slow to fetch.
+- **Gemini limits.** Rate limits trigger exponential backoff; the free tier allows only 8 hours of YouTube video per day.
+  This deployment uses a paid key.
+- **YouTube matching** pairs RSS episodes to channel uploads by title and date (with Gemini for retitled uploads), and only
+  sees each channel's 15 most recent long-form uploads.
+- **LinkedIn** profiles rarely appear in Google Search grounding, so most guests get the "Search on LinkedIn" fallback.
+- **Guest gate.** With the current shows, a guest must appear on two of them within 30 days. Weeks where that doesn't
+  happen honestly show "Nothing crossed the threshold".
+- **Email sender.** Without a verified domain, Resend only delivers to the account owner's address.
+- **Seed list changes.** Three seeded India shows had stopped publishing (The Barbershop, The Desi VC, 100x Entrepreneur)
+  and The Ranveer Show's English feed was sparse. They were switched off (history kept) and replaced with
+  The Prakhar Gupta Xperience, Z47 Moments, Think School's Indian Business Podcast and The Ranveer Show (Hindi). Change them in Settings.
