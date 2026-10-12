@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { RadarView } from "@/components/radar-view";
-import { addDays, isDay, istDay, istMonday } from "@/lib/dates";
+import { addDays, isDay, istDay, istDayStart, istMonday } from "@/lib/dates";
 import { formatIST } from "@/lib/format";
 import { explore, historyStart, latestBriefWeek, sentBriefs } from "@/lib/history";
 import { db } from "@/lib/supabase";
@@ -26,7 +26,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<Sea
 
   // Which view: the two tabs, or a date-filter selection.
   const filtered = isDay(q.from) && isDay(q.to) && q.from < q.to;
-  const tab = filtered ? null : q.tab === "last" ? "last" : "week";
+  // The home page opens on the latest brief; "This week so far" is a click away (it's thin early in the week).
+  const tab = filtered ? null : q.tab === "week" ? "week" : "last";
   let from = filtered ? q.from! : thisMonday;
   let to = filtered ? q.to! : tomorrow;
   let view: "sent" | "explore" = filtered ? (q.view === "sent" ? "sent" : "explore") : "explore";
@@ -53,8 +54,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<Sea
       </header>
 
       <div className="mt-8 flex gap-6 border-b border-slate-200 text-sm font-medium">
-        <TabLink href="/" active={tab === "week"}>This week so far</TabLink>
-        <TabLink href="/?tab=last" active={tab === "last"}>Last Monday&apos;s brief</TabLink>
+        <TabLink href="/" active={tab === "last"}>Last Monday&apos;s brief</TabLink>
+        <TabLink href="/?tab=week" active={tab === "week"}>This week so far</TabLink>
       </div>
 
       <div className="mt-6">
@@ -63,7 +64,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Sea
 
       <div className="mt-10">
         {view === "explore" ? (
-          <ExploreView from={from} to={to} showsFailed={tab === "week" ? lastRun?.shows_failed ?? [] : []} />
+          <ExploreView from={from} to={to} showsFailed={tab === "week" ? lastRun?.shows_failed ?? [] : []} thisWeek={tab === "week"} />
         ) : (
           <SentView from={from} to={to} />
         )}
@@ -84,14 +85,18 @@ function TabLink({ href, active, children }: { href: string; active: boolean; ch
   );
 }
 
-async function ExploreView({ from, to, showsFailed }: { from: string; to: string; showsFailed: string[] }) {
+async function ExploreView({ from, to, showsFailed, thisWeek }: { from: string; to: string; showsFailed: string[]; thisWeek: boolean }) {
   const result = await explore(from, to);
+  const days = Math.max(1, Math.ceil((Date.parse(result.to) - istDayStart(from).getTime()) / 864e5));
+  const earlyNote = thisWeek && days <= 3
+    ? `It's early in the week: ${result.stats.episodes_scanned} episodes since Monday. Topics need 2+ India shows covering the same theme this week, so this fills in as the week goes on. Last Monday's brief has the full picture.`
+    : undefined;
   return (
     <>
       <p className="mb-6 rounded-lg bg-indigo-50 px-4 py-2 text-sm text-indigo-800">
-        Explore · recomputed live from stored mentions with the current weights. Not the emailed brief.
+        {thisWeek ? "This week so far · " : "Explore · "}recomputed live from stored mentions with the current weights (rebuilt daily). Not the emailed brief.
       </p>
-      <RadarView content={{ ...result, shows_failed: showsFailed }} />
+      <RadarView content={{ ...result, shows_failed: showsFailed }} earlyNote={earlyNote} />
     </>
   );
 }

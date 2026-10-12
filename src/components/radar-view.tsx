@@ -21,7 +21,7 @@ const LABELS: Record<string, string> = {
   global_spread: "Global shows covering it", global_not_in_india: "Not yet in India", global_india_translation: "India translation (Gemini)",
 };
 
-export function RadarView({ content, full = false }: { content: RadarContent; full?: boolean }) {
+export function RadarView({ content, full = false, earlyNote }: { content: RadarContent; full?: boolean; earlyNote?: string }) {
   const pick = <T,>(xs: T[], n: number) => (full ? xs : xs.slice(0, n));
   const guests = pick(content.guests, TOP_N.guests);
   const topics = pick(content.topics, TOP_N.topics);
@@ -56,7 +56,7 @@ export function RadarView({ content, full = false }: { content: RadarContent; fu
         ))}
       </Section>
 
-      <Section title="Topics to ride or counter" empty={!topics.length}>
+      <Section title="Topics to ride or counter" empty={!topics.length} emptyText={earlyNote}>
         {topics.map((t, i) => (
           <Item key={t.entity_id} rank={i + 1} item={t} title={t.name}
             badge={<Badge tone={t.label === "counter" ? "amber" : "indigo"}>{t.label}</Badge>}
@@ -106,12 +106,12 @@ function Tile({ n, label, hint }: { n: number; label: string; hint: string }) {
   );
 }
 
-function Section({ title, empty, children }: { title: string; empty: boolean; children: React.ReactNode }) {
+function Section({ title, empty, emptyText, children }: { title: string; empty: boolean; emptyText?: string; children: React.ReactNode }) {
   return (
     <section>
       <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
       {empty ? (
-        <p className="mt-3 rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">Nothing crossed the threshold this week.</p>
+        <p className="mt-3 rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">{emptyText ?? "Nothing crossed the threshold this week."}</p>
       ) : (
         <div className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-200">{children}</div>
       )}
