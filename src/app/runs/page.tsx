@@ -1,0 +1,50 @@
+import Link from "next/link";
+import { formatIST } from "@/lib/format";
+import { db } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
+
+type Run = {
+  id: string; started_at: string; finished_at: string | null; status: string | null; mode: string | null;
+  total: number | null; shows_ok: string[]; shows_failed: string[];
+  log: { trigger?: string; usage?: { total_tokens: number }[]; shows?: { show: string; error?: string }[] } | null;
+};
+
+export default async function RunsPage() {
+  const { data } = await db().from("runs").select("*").order("started_at", { ascending: false }).limit(50);
+  const runs = (data ?? []) as Run[];
+  return (
+    <main className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
+      <Link href="/" className="text-sm text-indigo-600 hover:underline">← Dashboard</Link>
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight">Run log</h1>
+      <div className="mt-8 overflow-x-auto rounded-2xl border border-slate-200">
+        <table className="w-full min-w-[720px] text-left text-sm">
+          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <tr><th className="p-3">Started</th><th className="p-3">Mode</th><th className="p-3">Status</th><th className="p-3">Shows</th><th className="p-3">Time taken</th><th className="p-3">Gemini tokens</th></tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {runs.map((r) => {
+              const secs = r.finished_at ? Math.round((Date.parse(r.finished_at) - Date.parse(r.started_at)) / 1000) : null;
+              const tokens = (r.log?.usage ?? []).reduce((a, u) => a + (u.total_tokens ?? 0), 0);
+              const errors = (r.log?.shows ?? []).filter((s) => s.error);
+              return (
+                <tr key={r.id} className="align-top">
+                  <td className="p-3">{formatIST(r.started_at)}<div className="text-xs text-slate-500">{r.log?.trigger ?? ""}</div></td>
+                  <td className="p-3">{r.mode ?? "—"}</td>
+                  <td className="p-3"><span className={r.status === "ok" ? "text-emerald-700" : r.status === "running" || r.status === "finalizing" ? "text-indigo-600" : "text-amber-700"}>{r.status}</span></td>
+                  <td className="p-3">
+                    {r.shows_ok.length} ok{r.shows_failed.length ? `, ${r.shows_failed.length} failed` : ""}{r.total ? ` of ${r.total}` : ""}
+                    {errors.map((s) => <div key={s.show} className="text-xs text-red-600">{s.show}: {s.error}</div>)}
+                  </td>
+                  <td className="p-3">{secs == null ? "—" : secs >= 60 ? `${Math.floor(secs / 60)}m ${secs % 60}s` : `${secs}s`}</td>
+                  <td className="p-3 tabular-nums">{tokens.toLocaleString("en-IN")}</td>
+                </tr>
+              );
+            })}
+            {!runs.length && <tr><td colSpan={6} className="p-6 text-center text-slate-500">No runs yet.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </main>
+  );
+}
