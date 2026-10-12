@@ -1,3 +1,5 @@
+import { z } from "zod";
+import { generateJson } from "./gemini";
 import { db, selectAll } from "./supabase";
 import { normName } from "./text";
 
@@ -11,10 +13,61 @@ type EntityRow = {
   company: string | null;
   role: string | null;
 };
+export type NameInput = { name: string; company?: string | null; role?: string | null };
+
+const COLS = "id, type, canonical_name, aliases, company, role";
+const NOUN: Record<EntityType, string> = { guest: "person", topic: "topic", brand: "brand or company" };
+
+const matchSchema = z.object({ matches: z.array(z.object({ index: z.number().int(), match: z.string() })) });
 
 /**
- * Maps extracted names to rows in `entities`, creating new ones when there is no match.
- * Matching is by normalised name against canonical names and aliases.
+ * Asks Gemini whether each new name is the same as an existing canonical name (section 5.5).
+ * Returns, per new name, the matched existing canonical name, an earlier new name, or null (NEW).
+ */
+export async function matchNames(
+  type: EntityType,
+  fresh: NameInput[],
+  existing: { canonical_name: string; company?: string | null }[],
+  runId: string | null,
+): Promise<(string | null)[]> {
+  if (!fresh.length) return [];
+  const label = (x: { company?: string | null }) => (type === "guest" && x.company ? ` (${x.company})` : "");
+  const out = await generateJson({
+    task: "resolve", runId, schema: matchSchema, note: `${type}: ${fresh.length} new vs ${existing.length}`,
+    prompt: `You merge duplicate ${NOUN[type]} names in a podcast database.
+
+Existing canonical ${type} names:
+${existing.length ? existing.map((e) => `- ${e.canonical_name}${label(e)}`).join("\n") : "(none yet)"}
+
+New names:
+${fresh.map((f, i) => `${i}. ${f.name}${label(f)}`).join("\n")}
+
+For each new name: is it the same ${NOUN[type]} as one of the existing names, or as an EARLIER new name in the list?
+${type === "topic"
+    ? "Topics are the same if a reader would treat them as one theme (e.g. \"AI agents for SMBs\" = \"AI agents for small business\"). Do not merge merely related topics."
+    : type === "guest"
+      ? "People are the same only if it is clearly the same individual (spelling variants, initials, nicknames). Different people who share a company are NOT the same."
+      : "Brands are the same if they are the same company or product (e.g. \"Zerodha Kite\" = \"Zerodha\")."}
+Return { matches: [{ index, match }] } for every new name, where match is the existing or earlier new name copied exactly, or "NEW".`,
+  });
+
+  const existingByNorm = new Map(existing.map((e) => [normName(e.canonical_name), e.canonical_name]));
+  const result: (string | null)[] = fresh.map(() => null);
+  for (const m of out.matches) {
+    if (m.index < 0 || m.index >= fresh.length || /^new$/i.test(m.match.trim())) continue;
+    const n = normName(m.match);
+    if (existingByNorm.has(n)) result[m.index] = existingByNorm.get(n)!;
+    else {
+      const earlier = fresh.slice(0, m.index).find((f) => normName(f.name) === n);
+      if (earlier) result[m.index] = earlier.name;
+    }
+  }
+  return result;
+}
+
+/**
+ * Maps extracted names to canonical rows in `entities`: exact match on name/aliases first,
+ * then Gemini resolution for the rest, creating new entities only for genuinely new names.
  */
 export class EntityResolver {
   private cache = new Map<EntityType, EntityRow[]>();
@@ -25,7 +78,7 @@ export class EntityResolver {
     let rows = this.cache.get(type);
     if (!rows) {
       rows = await selectAll<EntityRow>((a, b) =>
-        db().from("entities").select("id, type, canonical_name, aliases, company, role").eq("type", type).range(a, b),
+        db().from("entities").select(COLS).eq("type", type).is("merged_into", null).order("id").range(a, b),
       );
       this.cache.set(type, rows);
     }
@@ -37,40 +90,130 @@ export class EntityResolver {
     return rows.find((r) => normName(r.canonical_name) === n || (r.aliases ?? []).some((a) => normName(a) === n));
   }
 
-  async resolve(type: EntityType, rawName: string, extra: { company?: string | null; role?: string | null } = {}): Promise<string | null> {
-    const name = (type === "topic" ? rawName.toLowerCase() : rawName).replace(/\s+/g, " ").trim();
-    if (!normName(name)) return null;
-    const rows = await this.rows(type);
-
-    const hit = this.findExact(rows, name);
-    if (hit) {
-      if ((extra.company && !hit.company) || (extra.role && !hit.role)) {
-        const patch = { company: hit.company ?? extra.company ?? null, role: hit.role ?? extra.role ?? null };
-        await db().from("entities").update(patch).eq("id", hit.id);
-        Object.assign(hit, patch);
-      }
-      return hit.id;
-    }
-    return this.create(type, name, extra);
+  private clean(type: EntityType, name: string) {
+    return (type === "topic" ? name.toLowerCase() : name).replace(/\s+/g, " ").trim();
   }
 
-  protected async create(type: EntityType, name: string, extra: { company?: string | null; role?: string | null }): Promise<string> {
+  /** Resolves a list of names of one type; returns entity ids in the same order (null for blanks). */
+  async resolveMany(type: EntityType, inputs: NameInput[]): Promise<(string | null)[]> {
+    const rows = await this.rows(type);
+    const ids: (string | null)[] = inputs.map(() => null);
+    const pending: { i: number; input: NameInput }[] = [];
+
+    inputs.forEach((raw, i) => {
+      const input = { ...raw, name: this.clean(type, raw.name) };
+      if (!normName(input.name)) return;
+      const hit = this.findExact(rows, input.name);
+      if (hit) ids[i] = hit.id;
+      else pending.push({ i, input });
+    });
+
+    // De-duplicate exact repeats, then ask Gemini about the remaining unknown names.
+    const unique = [...new Map(pending.map((p) => [normName(p.input.name), p.input])).values()];
+    let matches: (string | null)[] = unique.map(() => null);
+    if (unique.length && rows.length) {
+      try {
+        matches = await matchNames(type, unique, rows, this.runId);
+      } catch (e) {
+        console.error("entity resolution failed; treating names as new", (e as Error).message);
+      }
+    }
+
+    const idByNorm = new Map<string, string>();
+    for (let k = 0; k < unique.length; k++) {
+      const input = unique[k];
+      const target = matches[k];
+      let id: string;
+      const existingRow = target ? this.findExact(rows, target) : undefined;
+      if (existingRow) {
+        id = existingRow.id;
+        await this.addAlias(existingRow, input.name);
+      } else if (target && idByNorm.has(normName(target))) {
+        id = idByNorm.get(normName(target))!;
+        const row = rows.find((r) => r.id === id);
+        if (row) await this.addAlias(row, input.name);
+      } else {
+        id = await this.create(type, input);
+      }
+      idByNorm.set(normName(input.name), id);
+    }
+
+    for (const p of pending) ids[p.i] = idByNorm.get(normName(p.input.name)) ?? null;
+    await this.fillDetails(type, inputs, ids);
+    return ids;
+  }
+
+  async resolve(type: EntityType, name: string, extra: { company?: string | null; role?: string | null } = {}) {
+    return (await this.resolveMany(type, [{ name, ...extra }]))[0];
+  }
+
+  private async addAlias(row: EntityRow, alias: string) {
+    if (normName(row.canonical_name) === normName(alias) || (row.aliases ?? []).some((a) => normName(a) === normName(alias))) return;
+    row.aliases = [...(row.aliases ?? []), alias];
+    await db().from("entities").update({ aliases: row.aliases }).eq("id", row.id);
+  }
+
+  /** Fills in company / role on guests when a later mention states them. */
+  private async fillDetails(type: EntityType, inputs: NameInput[], ids: (string | null)[]) {
+    if (type !== "guest") return;
+    const rows = await this.rows(type);
+    for (let i = 0; i < inputs.length; i++) {
+      const row = rows.find((r) => r.id === ids[i]);
+      const { company, role } = inputs[i];
+      if (!row || !((company && !row.company) || (role && !row.role))) continue;
+      const patch = { company: row.company ?? company ?? null, role: row.role ?? role ?? null };
+      await db().from("entities").update(patch).eq("id", row.id);
+      Object.assign(row, patch);
+    }
+  }
+
+  private async create(type: EntityType, input: NameInput): Promise<string> {
+    const name = input.name;
     const { data, error } = await db()
       .from("entities")
       .upsert(
-        { type, canonical_name: name, company: extra.company || null, role: extra.role || null },
+        { type, canonical_name: name, company: input.company || null, role: input.role || null },
         { onConflict: "type,canonical_name", ignoreDuplicates: true },
       )
-      .select("id, type, canonical_name, aliases, company, role");
+      .select(COLS);
     let row = data?.[0] as EntityRow | undefined;
     if (!row) {
       // Another show created it at the same moment; read it back.
-      const again = await db().from("entities").select("id, type, canonical_name, aliases, company, role")
-        .eq("type", type).eq("canonical_name", name).single();
+      const again = await db().from("entities").select(COLS).eq("type", type).eq("canonical_name", name).single();
       if (again.error) throw new Error(error?.message ?? again.error.message);
       row = again.data as EntityRow;
     }
     (await this.rows(type)).push(row);
     return row.id;
   }
+}
+
+/**
+ * Catches duplicates created in parallel (3 shows ingest at once): every root entity created
+ * since `since` is checked against older roots; matches are linked via merged_into (never deleted).
+ */
+export async function consolidateSince(since: string, runId: string | null) {
+  const merged: Record<EntityType, number> = { guest: 0, topic: 0, brand: 0 };
+  for (const type of ["guest", "topic", "brand"] as EntityType[]) {
+    const roots = await selectAll<EntityRow & { created_at: string }>((a, b) =>
+      db().from("entities").select(`${COLS}, created_at`).eq("type", type).is("merged_into", null).order("created_at").range(a, b),
+    );
+    const fresh = roots.filter((r) => r.created_at >= since);
+    const older = roots.filter((r) => r.created_at < since);
+    if (!fresh.length || !older.length) continue;
+    for (let i = 0; i < fresh.length; i += 150) {
+      const chunk = fresh.slice(i, i + 150);
+      const matches = await matchNames(type, chunk.map((f) => ({ name: f.canonical_name, company: f.company })), older, runId);
+      for (let k = 0; k < chunk.length; k++) {
+        const target = matches[k] && older.find((o) => normName(o.canonical_name) === normName(matches[k]!));
+        if (!target) continue;
+        await db().from("entities").update({ merged_into: target.id }).eq("id", chunk[k].id);
+        const aliases = [...new Set([...(target.aliases ?? []), chunk[k].canonical_name, ...(chunk[k].aliases ?? [])])];
+        await db().from("entities").update({ aliases }).eq("id", target.id);
+        target.aliases = aliases;
+        merged[type]++;
+      }
+    }
+  }
+  return merged;
 }

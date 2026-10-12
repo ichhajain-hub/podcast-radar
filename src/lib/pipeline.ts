@@ -1,3 +1,6 @@
+import { buildBrief } from "./brief";
+import { addDays, istDayStart, istMonday } from "./dates";
+import { consolidateSince } from "./entities";
 import { rateMissingFits } from "./fit";
 import { fetchStatus, ingestShow, type IngestResult } from "./ingest";
 import { kickAndWait } from "./internal";
@@ -89,15 +92,28 @@ async function recordShow(runId: string, showId: string, name: string, result: I
   if (markErr) console.error("run_mark_show", markErr.message);
 }
 
-/** After all shows: rescore (rate any new candidates' fit). Weekly mode also writes the brief (Layer 4). */
+/**
+ * After all shows: merge duplicate names created in parallel, rate fit for new candidates
+ * (daily rescore). Weekly mode also writes and stores the brief for the week that just ended.
+ */
 export async function finalizeRun(runId: string) {
   const { data: run } = await db().from("runs").select("*").eq("id", runId).single();
   if (!run) return;
   const notes: Record<string, unknown> = {};
   try {
+    notes.merged = await consolidateSince(run.started_at, runId);
     const now = new Date();
-    const result = await scoreRange(new Date(now.getTime() - 7 * 864e5), now);
-    notes.fit_rated = await rateMissingFits(result, runId);
+    // Rate fit for anything that could appear on the dashboard or in this Monday's brief.
+    const lastWeek = istDayStart(addDays(istMonday(now), -7));
+    for (const [from, to] of [[new Date(now.getTime() - 7 * 864e5), now], [lastWeek, istDayStart(istMonday(now))]]) {
+      notes.fit_rated = await rateMissingFits(await scoreRange(from, to), runId);
+    }
+    if (run.mode === "weekly") {
+      const week = addDays(istMonday(now), -7);
+      const { data: latest } = await db().from("runs").select("shows_failed").eq("id", runId).single();
+      const brief = await buildBrief(week, { runId, showsFailed: latest?.shows_failed ?? [] });
+      notes.brief = { week_start: week, skipped: brief.skipped ?? null };
+    }
   } catch (e) {
     notes.finalize_error = (e as Error).message;
   }

@@ -27,7 +27,7 @@ const guest = z.object({
   evidence,
 });
 const topic = z.object({
-  label: z.string().describe("Short reusable topic label, 2-6 words, lowercase, e.g. 'quick commerce unit economics'"),
+  label: z.string().describe("Short reusable theme label, 2-5 words, lowercase, at the level a newsletter would use as a section theme, e.g. 'quick commerce unit economics', 'ai agents for smbs'"),
   stance: z.enum(["bullish", "bearish", "neutral"]),
   evidence,
 });
@@ -90,32 +90,39 @@ export async function extractBatch(
     : await generateJson({ task: "extract", runId, prompt, schema: fullSchema, note });
 
   const hostNames = new Set((show.hosts ?? []).map((h) => h.toLowerCase()));
-  const rows: Record<string, unknown>[] = [];
-
+  type G = z.infer<typeof guest>; type T = z.infer<typeof topic>; type B = z.infer<typeof brand>;
+  const gs: { ep: EpisodeForExtraction; g: G }[] = [];
+  const ts: { ep: EpisodeForExtraction; t: T }[] = [];
+  const bs: { ep: EpisodeForExtraction; b: B }[] = [];
   for (const out of result.episodes) {
     const ep = eps[out.episode_index];
     if (!ep) continue;
-    for (const g of out.guests ?? []) {
-      if (!g.name.trim() || hostNames.has(g.name.trim().toLowerCase())) continue;
-      const id = await resolver.resolve("guest", g.name, { company: g.company || null, role: g.role || null });
-      if (!id) continue;
-      rows.push({ episode_id: ep.id, entity_id: id, kind: "guest", source: "notes", evidence: clipWords(g.evidence) });
-      counts.guests++;
-    }
-    for (const t of out.topics.slice(0, 5)) {
-      const id = await resolver.resolve("topic", t.label);
-      if (!id) continue;
-      rows.push({ episode_id: ep.id, entity_id: id, kind: "topic", source: "notes", stance: t.stance, evidence: clipWords(t.evidence) });
-      counts.topics++;
-    }
-    for (const b of out.brands ?? []) {
-      if (b.is_show_own_or_network || !b.name.trim()) continue;
-      const id = await resolver.resolve("brand", b.name);
-      if (!id) continue;
-      rows.push({ episode_id: ep.id, entity_id: id, kind: b.kind, source: "notes", confidence: b.confidence, evidence: clipWords(b.evidence) });
-      counts.brands++;
-    }
+    for (const g of out.guests ?? []) if (g.name.trim() && !hostNames.has(g.name.trim().toLowerCase())) gs.push({ ep, g });
+    for (const t of out.topics.slice(0, 5)) if (t.label.trim()) ts.push({ ep, t });
+    for (const b of out.brands ?? []) if (!b.is_show_own_or_network && b.name.trim()) bs.push({ ep, b });
   }
+
+  // Entity resolution (5.5): one Gemini call per type for the whole batch.
+  const gIds = await resolver.resolveMany("guest", gs.map(({ g }) => ({ name: g.name, company: g.company || null, role: g.role || null })));
+  const tIds = await resolver.resolveMany("topic", ts.map(({ t }) => ({ name: t.label })));
+  const bIds = await resolver.resolveMany("brand", bs.map(({ b }) => ({ name: b.name })));
+
+  const rows: Record<string, unknown>[] = [];
+  gs.forEach(({ ep, g }, i) => {
+    if (!gIds[i]) return;
+    rows.push({ episode_id: ep.id, entity_id: gIds[i], kind: "guest", source: "notes", evidence: clipWords(g.evidence) });
+    counts.guests++;
+  });
+  ts.forEach(({ ep, t }, i) => {
+    if (!tIds[i]) return;
+    rows.push({ episode_id: ep.id, entity_id: tIds[i], kind: "topic", source: "notes", stance: t.stance, evidence: clipWords(t.evidence) });
+    counts.topics++;
+  });
+  bs.forEach(({ ep, b }, i) => {
+    if (!bIds[i]) return;
+    rows.push({ episode_id: ep.id, entity_id: bIds[i], kind: b.kind, source: "notes", confidence: b.confidence, evidence: clipWords(b.evidence) });
+    counts.brands++;
+  });
 
   // One mention per (episode, entity, kind); duplicates inside the batch are collapsed first.
   const unique = [...new Map(rows.map((r) => [`${r.episode_id}|${r.entity_id}|${r.kind}`, r])).values()];
