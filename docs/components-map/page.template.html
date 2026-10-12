@@ -1,0 +1,122 @@
+<title>Podcast Radar Components Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: stacked pale-green section cards on a quiet page; the swimlane diagram sits on a white panel and scrolls sideways on small screens. */
+:root {
+  --bg: #f4f7f5; --card: #e5f2e9; --panel: #ffffff; --ink: #18211c; --mute: #5b6a61;
+  --line: #26302b; --grid: #cfd8d2; --accent: #2f6b4f; --gfill: #e4f1e8; --head: #123d2c;
+  --font-display: "Manrope", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Manrope", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1512; --card: #16231c; --panel: #121a16; --ink: #e3ece6; --mute: #9db0a4;
+  --line: #b9c9be; --grid: #2f3d35; --accent: #7cc7a0; --gfill: #1d3a2b; --head: #bfe5cf; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1512; --card: #16231c; --panel: #121a16; --ink: #e3ece6; --mute: #9db0a4;
+  --line: #b9c9be; --grid: #2f3d35; --accent: #7cc7a0; --gfill: #1d3a2b; --head: #bfe5cf; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; margin: 0; padding-inline: 16px; padding-block: 32px 64px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 28px; }
+.card { background: var(--card); border-radius: 22px; padding: clamp(20px, 4vw, 56px); min-width: 0; }
+h1, h2 { font-family: var(--font-display); color: var(--head); text-wrap: balance; letter-spacing: -0.02em; margin: 0; }
+h1 { font-size: clamp(28px, 4.4vw, 46px); font-weight: 800; line-height: 1.1; }
+h2 { font-size: clamp(22px, 3vw, 32px); font-weight: 800; margin-bottom: 18px; }
+p { max-width: 68ch; margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+.lead { margin-top: 14px; color: var(--mute); }
+.links { display: flex; flex-wrap: wrap; gap: 12px 28px; margin-top: 22px; }
+.links div { display: grid; gap: 2px; min-width: 0; }
+.links span { font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: .06em; }
+.links a { color: var(--accent); font-family: var(--font-mono); font-size: 14px; word-break: break-all; }
+.panel { background: var(--panel); border-radius: 6px; padding: 18px; overflow-x: auto; }
+.panel svg { display: block; min-width: 1100px; width: 100%; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 14px; font-size: 13px; color: var(--mute); }
+.legend i { display: inline-block; width: 22px; height: 12px; vertical-align: -1px; margin-right: 8px; border: 1px solid var(--line); background: var(--panel); }
+.legend i.g { background: var(--gfill); border: 1.4px solid var(--accent); }
+ol.steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 80ch; }
+ol.steps b { color: var(--head); }
+.tablebox { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); font-weight: 600; }
+td.n { font-family: var(--font-mono); color: var(--mute); width: 36px; font-variant-numeric: tabular-nums; }
+.tag { font-family: var(--font-mono); font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: var(--panel); border: 1px solid var(--grid); white-space: nowrap; }
+.tag.g { background: var(--gfill); border-color: var(--accent); color: var(--head); }
+code { font-family: var(--font-mono); font-size: 13px; }
+</style>
+
+<div class="wrap">
+  <section class="card">
+    <div class="eyebrow">MESA Cohort C4 · AI and its Applications · Problem 20</div>
+    <h1>Podcast Ecosystem Radar — Components Map</h1>
+    <p class="lead">Every Monday before 7:30 AM IST, Aditya gets one sourced brief built from live data across 10 Indian and 5 global podcasts: which founders to book, which topics to ride or counter, and which brands are buying podcast reads. Every AI step runs on Gemini Flash.</p>
+    <div class="links">
+      <div><span>Live app</span><a href="https://podcast-radar-psi.vercel.app" target="_blank" rel="noreferrer">podcast-radar-psi.vercel.app</a></div>
+      <div><span>GitHub repository</span><a href="https://github.com/ichhajain-hub/podcast-radar" target="_blank" rel="noreferrer">github.com/ichhajain-hub/podcast-radar</a></div>
+      <div><span>AI model</span><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noreferrer">gemini-3.8-flash</a></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Components Map</h2>
+    <div class="panel">
+%%SVG%%
+    </div>
+    <div class="legend"><span><i class="g"></i>Gemini Flash (5 AI steps)</span><span><i></i>Infrastructure, data and delivery</span><span>Dotted arrows show data moving between components</span></div>
+  </section>
+
+  <section class="card">
+    <h2>How a Monday run works</h2>
+    <ol class="steps">
+      <li><b>Trigger.</b> Vercel Cron calls <code>/api/run?mode=weekly</code> at 5:30 AM IST (daily runs refresh the dashboard the same way, without email).</li>
+      <li><b>Read config.</b> The orchestrator loads the active shows and weights Aditya set in Settings. No code or redeploy needed.</li>
+      <li><b>Fetch.</b> One job per show pulls live RSS or YouTube-channel feeds: the last 30 days for India, 14 days for global. Episodes already stored are skipped.</li>
+      <li><b>Extract.</b> Gemini Flash reads titles and show notes and returns guests, topics with stance, and brands, each with a short evidence quote.</li>
+      <li><b>Deep-read.</b> For India episodes with a public YouTube video, Gemini Flash watches it at low resolution and lists spoken sponsor reads with timestamps.</li>
+      <li><b>Resolve.</b> Gemini Flash merges name variants of people, themes and brands. Duplicates are linked, never deleted.</li>
+      <li><b>Score.</b> <code>score(from, to, weights)</code> applies the gates and weights and tags each item New, Rising or Repeat against last week.</li>
+      <li><b>Find links.</b> Gemini Flash with Google Search grounding finds LinkedIn and company sites for shortlisted guests, and keeps only URLs from search results.</li>
+      <li><b>Write and deliver.</b> Gemini Flash writes the "why now" lines from each item's own sources (fact-checked in code). The brief is stored, emailed through Resend and shown on the dashboard.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2>Component inventory</h2>
+    <div class="tablebox"><table>
+      <thead><tr><th>#</th><th>Component</th><th>Tool</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td class="n">1</td><td>Settings dashboard</td><td><span class="tag">Next.js + Supabase</span></td><td>Password-protected page to add, edit and switch shows (India / global / own), edit weights, the guest gate and the video deep-read cap; shows estimated spend</td></tr>
+        <tr><td class="n">2</td><td>Scheduler</td><td><span class="tag">Vercel Cron</span></td><td>Daily 5:30 AM IST refresh; Monday 5:30 AM IST run also sends the brief (lands by ~6:35)</td></tr>
+        <tr><td class="n">3</td><td>Run orchestrator</td><td><span class="tag">Next.js API route</span></td><td>One ingest job per show, 3 at a time; up to 2 video deep-reads in parallel; a failed show is logged and named in the brief</td></tr>
+        <tr><td class="n">4</td><td>Feed fetcher</td><td><span class="tag">rss-parser</span></td><td>Live RSS and YouTube channel feeds; links each India episode to its public YouTube video</td></tr>
+        <tr><td class="n">5</td><td>Episode extractor</td><td><span class="tag g">Gemini Flash</span></td><td>Structured JSON (validated with zod): guests, topics + stance, brands + paid/organic, each with an evidence quote</td></tr>
+        <tr><td class="n">6</td><td>Sponsor deep-read</td><td><span class="tag g">Gemini Flash</span></td><td>YouTube URL at low media resolution; spoken sponsor reads with timestamps; minute cap set in Settings</td></tr>
+        <tr><td class="n">7</td><td>Entity resolver</td><td><span class="tag g">Gemini Flash</span></td><td>Maps new names onto canonical people, topics and brands; groups topic themes</td></tr>
+        <tr><td class="n">8</td><td>Link finder</td><td><span class="tag g">Gemini Flash + Search</span></td><td>LinkedIn and company site from grounded search results only; otherwise a "Search on LinkedIn" link</td></tr>
+        <tr><td class="n">9</td><td>Store</td><td><span class="tag">Supabase Postgres</span></td><td>Permanent history: shows, weights, settings, episodes, entities, mentions, briefs, runs (with token usage)</td></tr>
+        <tr><td class="n">10</td><td>Scoring engine</td><td><span class="tag">TypeScript score()</span></td><td>Gates, weighted scores out of 100, New / Rising / Repeat; one function for daily, weekly and history views</td></tr>
+        <tr><td class="n">11</td><td>Brief writer</td><td><span class="tag g">Gemini Flash</span></td><td>"Why now" lines and India angles using only each item's sources; rejected and retried if it names anything else</td></tr>
+        <tr><td class="n">12</td><td>Delivery</td><td><span class="tag">Resend + dashboard</span></td><td>Monday email; dashboard with date filter (As sent / Explore), archive and run log</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <h2>How the problem statement is met</h2>
+    <div class="tablebox"><table>
+      <thead><tr><th>Requirement</th><th>How it is met</th><th>Components</th></tr></thead>
+      <tbody>
+        <tr><td>Live external data</td><td>Real RSS feeds and public YouTube videos fetched every morning; 8 weeks backfilled</td><td>2, 4, 6</td></tr>
+        <tr><td>Gemini Flash for all AI; no Claude API</td><td>Extraction, deep-read, name merging, link finding and brief writing all call Gemini Flash; an automated test fails if the other vendor's SDK or API appears in the repo</td><td>5, 6, 7, 8, 11</td></tr>
+        <tr><td>Deployed on Vercel</td><td>App, API routes and crons on Vercel; public URL and public GitHub repo</td><td>2, 3, 12</td></tr>
+        <tr><td>10 shows, configurable without code</td><td>Settings page with add / edit / switch-off and a live feed check; changes apply on the next run</td><td>1</td></tr>
+        <tr><td>Guests on multiple shows in the same month</td><td>30-day cross-show count; a "Doing media rounds" block lists every guest on 2+ India shows, and "Book this week" ranks founders who are ahead of the curve</td><td>7, 10</td></tr>
+        <tr><td>Topics across shows</td><td>Weekly show count, acceleration vs the 4-week average, ride / counter tag, plus global signals not yet covered in India</td><td>10</td></tr>
+        <tr><td>Brands mentioned or promoted</td><td>Show notes plus spoken reads, tagged paid or organic, with timestamped links</td><td>5, 6, 10</td></tr>
+        <tr><td>Brief every Monday morning</td><td>Monday 5:30 AM IST cron; email via Resend, arriving before 7:30 AM IST</td><td>2, 12</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>

@@ -1,6 +1,8 @@
 # Podcast Ecosystem Radar
 
-**Live:** https://podcast-radar-psi.vercel.app · **Settings:** https://podcast-radar-psi.vercel.app/settings
+**Live:** https://podcast-radar-psi.vercel.app · **Settings:** https://podcast-radar-psi.vercel.app/settings · **Components Map:** [`docs/components-map/`](docs/components-map/) (diagram PNG, PDF and HTML)
+
+![Components Map](docs/components-map/components-map-diagram.png)
 
 Every Monday before 7:30 AM IST, this app emails a podcast host a one-page radar built from the
 last week of **live** podcast data:

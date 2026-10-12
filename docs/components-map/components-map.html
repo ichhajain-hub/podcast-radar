@@ -1,0 +1,263 @@
+<title>Podcast Radar Components Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: stacked pale-green section cards on a quiet page; the swimlane diagram sits on a white panel and scrolls sideways on small screens. */
+:root {
+  --bg: #f4f7f5; --card: #e5f2e9; --panel: #ffffff; --ink: #18211c; --mute: #5b6a61;
+  --line: #26302b; --grid: #cfd8d2; --accent: #2f6b4f; --gfill: #e4f1e8; --head: #123d2c;
+  --font-display: "Manrope", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Manrope", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1512; --card: #16231c; --panel: #121a16; --ink: #e3ece6; --mute: #9db0a4;
+  --line: #b9c9be; --grid: #2f3d35; --accent: #7cc7a0; --gfill: #1d3a2b; --head: #bfe5cf; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1512; --card: #16231c; --panel: #121a16; --ink: #e3ece6; --mute: #9db0a4;
+  --line: #b9c9be; --grid: #2f3d35; --accent: #7cc7a0; --gfill: #1d3a2b; --head: #bfe5cf; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; margin: 0; padding-inline: 16px; padding-block: 32px 64px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 28px; }
+.card { background: var(--card); border-radius: 22px; padding: clamp(20px, 4vw, 56px); min-width: 0; }
+h1, h2 { font-family: var(--font-display); color: var(--head); text-wrap: balance; letter-spacing: -0.02em; margin: 0; }
+h1 { font-size: clamp(28px, 4.4vw, 46px); font-weight: 800; line-height: 1.1; }
+h2 { font-size: clamp(22px, 3vw, 32px); font-weight: 800; margin-bottom: 18px; }
+p { max-width: 68ch; margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+.lead { margin-top: 14px; color: var(--mute); }
+.links { display: flex; flex-wrap: wrap; gap: 12px 28px; margin-top: 22px; }
+.links div { display: grid; gap: 2px; min-width: 0; }
+.links span { font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: .06em; }
+.links a { color: var(--accent); font-family: var(--font-mono); font-size: 14px; word-break: break-all; }
+.panel { background: var(--panel); border-radius: 6px; padding: 18px; overflow-x: auto; }
+.panel svg { display: block; min-width: 1100px; width: 100%; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 14px; font-size: 13px; color: var(--mute); }
+.legend i { display: inline-block; width: 22px; height: 12px; vertical-align: -1px; margin-right: 8px; border: 1px solid var(--line); background: var(--panel); }
+.legend i.g { background: var(--gfill); border: 1.4px solid var(--accent); }
+ol.steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 80ch; }
+ol.steps b { color: var(--head); }
+.tablebox { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); font-weight: 600; }
+td.n { font-family: var(--font-mono); color: var(--mute); width: 36px; font-variant-numeric: tabular-nums; }
+.tag { font-family: var(--font-mono); font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: var(--panel); border: 1px solid var(--grid); white-space: nowrap; }
+.tag.g { background: var(--gfill); border-color: var(--accent); color: var(--head); }
+code { font-family: var(--font-mono); font-size: 13px; }
+</style>
+
+<div class="wrap">
+  <section class="card">
+    <div class="eyebrow">MESA Cohort C4 · AI and its Applications · Problem 20</div>
+    <h1>Podcast Ecosystem Radar — Components Map</h1>
+    <p class="lead">Every Monday before 7:30 AM IST, Aditya gets one sourced brief built from live data across 10 Indian and 5 global podcasts: which founders to book, which topics to ride or counter, and which brands are buying podcast reads. Every AI step runs on Gemini Flash.</p>
+    <div class="links">
+      <div><span>Live app</span><a href="https://podcast-radar-psi.vercel.app" target="_blank" rel="noreferrer">podcast-radar-psi.vercel.app</a></div>
+      <div><span>GitHub repository</span><a href="https://github.com/ichhajain-hub/podcast-radar" target="_blank" rel="noreferrer">github.com/ichhajain-hub/podcast-radar</a></div>
+      <div><span>AI model</span><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noreferrer">gemini-3.8-flash</a></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Components Map</h2>
+    <div class="panel">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 806" width="1400" height="806" font-family="Manrope, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+<title id="t">Podcast Ecosystem Radar components map</title>
+<desc id="d">Swimlane diagram: lanes for Aditya, Vercel Cron, the Radar app, podcast feeds, Gemini Flash, Supabase and Resend across trigger, input, context, processing and output.</desc>
+<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="var(--line)"/></marker></defs>
+<rect x="0" y="0" width="1400" height="806" fill="var(--panel)"/>
+<line x1="150" y1="22.0" x2="1400" y2="22.0" stroke="var(--grid)" stroke-dasharray="2 3"/>
+<rect x="235.9" y="13.0" width="78.19999999999999" height="18" fill="var(--panel)"/>
+<text x="275.0" y="26.0" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1.2" fill="var(--ink)">TRIGGER</text>
+<rect x="494.5" y="13.0" width="61.0" height="18" fill="var(--panel)"/>
+<text x="525.0" y="26.0" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1.2" fill="var(--ink)">INPUT</text>
+<circle cx="400" cy="22.0" r="2.5" fill="var(--accent)"/>
+<line x1="400" y1="44" x2="400" y2="804" stroke="var(--grid)" stroke-width="1"/>
+<rect x="735.9" y="13.0" width="78.19999999999999" height="18" fill="var(--panel)"/>
+<text x="775.0" y="26.0" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1.2" fill="var(--ink)">CONTEXT</text>
+<circle cx="650" cy="22.0" r="2.5" fill="var(--accent)"/>
+<line x1="650" y1="44" x2="650" y2="804" stroke="var(--grid)" stroke-width="1"/>
+<rect x="973.0" y="13.0" width="104.0" height="18" fill="var(--panel)"/>
+<text x="1025.0" y="26.0" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1.2" fill="var(--ink)">PROCESSING</text>
+<circle cx="900" cy="22.0" r="2.5" fill="var(--accent)"/>
+<line x1="900" y1="44" x2="900" y2="804" stroke="var(--grid)" stroke-width="1"/>
+<rect x="1240.2" y="13.0" width="69.6" height="18" fill="var(--panel)"/>
+<text x="1275.0" y="26.0" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1.2" fill="var(--ink)">OUTPUT</text>
+<circle cx="1150" cy="22.0" r="2.5" fill="var(--accent)"/>
+<line x1="1150" y1="44" x2="1150" y2="804" stroke="var(--grid)" stroke-width="1"/>
+<rect x="1" y="44" width="1398" height="760" fill="none" stroke="var(--line)" stroke-width="1"/>
+<line x1="150" y1="44" x2="150" y2="804" stroke="var(--line)"/>
+<line x1="1" y1="44" x2="1399" y2="44" stroke="var(--line)" stroke-width="1"/>
+<text x="75.0" y="111.0" text-anchor="middle" font-size="11.5" font-weight="700" letter-spacing=".5" fill="var(--ink)">ADITYA</text>
+<text x="75.0" y="126.0" text-anchor="middle" font-size="10.5" fill="var(--mute)">(Host)</text>
+<line x1="1" y1="182" x2="1399" y2="182" stroke="var(--line)" stroke-width="1"/>
+<text x="75.0" y="226.5" text-anchor="middle" font-size="11.5" font-weight="700" letter-spacing=".5" fill="var(--ink)">VERCEL CRON</text>
+<text x="75.0" y="241.5" text-anchor="middle" font-size="10.5" fill="var(--mute)">(Scheduler)</text>
+<line x1="1" y1="275" x2="1399" y2="275" stroke="var(--line)" stroke-width="1"/>
+<text x="75.0" y="313.0" text-anchor="middle" font-size="11.5" font-weight="700" letter-spacing=".5" fill="var(--ink)">RADAR APP</text>
+<text x="75.0" y="328.0" text-anchor="middle" font-size="10.5" fill="var(--mute)">(Next.js on Vercel)</text>
+<line x1="1" y1="355" x2="1399" y2="355" stroke="var(--line)" stroke-width="1"/>
+<text x="75.0" y="399.5" text-anchor="middle" font-size="11.5" font-weight="700" letter-spacing=".5" fill="var(--ink)">PODCAST FEEDS</text>
+<text x="75.0" y="414.5" text-anchor="middle" font-size="10.5" fill="var(--mute)">(RSS + YouTube)</text>
+<line x1="1" y1="448" x2="1399" y2="448" stroke="var(--line)" stroke-width="1"/>
+<text x="75.0" y="544.0" text-anchor="middle" font-size="11.5" font-weight="700" letter-spacing=".5" fill="var(--ink)">GEMINI FLASH</text>
+<text x="75.0" y="559.0" text-anchor="middle" font-size="10.5" fill="var(--mute)">(LLM)</text>
+<line x1="1" y1="644" x2="1399" y2="644" stroke="var(--line)" stroke-width="1"/>
+<text x="75.0" y="682.0" text-anchor="middle" font-size="11.5" font-weight="700" letter-spacing=".5" fill="var(--ink)">SUPABASE</text>
+<text x="75.0" y="697.0" text-anchor="middle" font-size="10.5" fill="var(--mute)">(Database)</text>
+<line x1="1" y1="724" x2="1399" y2="724" stroke="var(--line)" stroke-width="1"/>
+<text x="75.0" y="762.0" text-anchor="middle" font-size="11.5" font-weight="700" letter-spacing=".5" fill="var(--ink)">RESEND</text>
+<text x="75.0" y="777.0" text-anchor="middle" font-size="10.5" fill="var(--mute)">(Email)</text>
+<path d="M367.0,113.0 L392,113.0 L392,684.0 L433.0,684.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="367.0" cy="113.0" r="2.2" fill="var(--accent)"/>
+<path d="M367.0,228.5 L398,228.5 L398,315.0 L433.0,315.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="367.0" cy="228.5" r="2.2" fill="var(--accent)"/>
+<path d="M617.0,684.0 L636,684.0 L636,315.0 L617.0,315.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="617.0" cy="684.0" r="2.2" fill="var(--accent)"/>
+<path d="M617.0,315.0 L630,315.0 L630,401.5 L617.0,401.5" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="617.0" cy="315.0" r="2.2" fill="var(--accent)"/>
+<path d="M617.0,401.5 L642,401.5 L642,517.0 L683.0,517.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="617.0" cy="401.5" r="2.2" fill="var(--accent)"/>
+<path d="M617.0,401.5 L648,401.5 L648,401.5 L683.0,401.5" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="617.0" cy="401.5" r="2.2" fill="var(--accent)"/>
+<path d="M867.0,401.5 L886,401.5 L886,575.0 L867.0,575.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="867.0" cy="401.5" r="2.2" fill="var(--accent)"/>
+<path d="M867.0,517.0 L892,517.0 L892,488.0 L933.0,488.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="867.0" cy="517.0" r="2.2" fill="var(--accent)"/>
+<path d="M867.0,575.0 L898,575.0 L898,488.0 L933.0,488.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="867.0" cy="575.0" r="2.2" fill="var(--accent)"/>
+<path d="M933.0,488.0 L908,488.0 L908,684.0 L867.0,684.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="933.0" cy="488.0" r="2.2" fill="var(--accent)"/>
+<path d="M867.0,684.0 L904,684.0 L904,315.0 L933.0,315.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="867.0" cy="684.0" r="2.2" fill="var(--accent)"/>
+<path d="M1117.0,315.0 L1136,315.0 L1136,546.0 L1117.0,546.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="1117.0" cy="315.0" r="2.2" fill="var(--accent)"/>
+<path d="M1117.0,315.0 L1130,315.0 L1130,604.0 L1117.0,604.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="1117.0" cy="315.0" r="2.2" fill="var(--accent)"/>
+<path d="M1025.0,568.0 L1025.0,582.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="1025.0" cy="568.0" r="2.2" fill="var(--accent)"/>
+<path d="M1117.0,604.0 L1142,604.0 L1142,684.0 L1183.0,684.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="1117.0" cy="604.0" r="2.2" fill="var(--accent)"/>
+<path d="M1117.0,604.0 L1148,604.0 L1148,764.0 L1183.0,764.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="1117.0" cy="604.0" r="2.2" fill="var(--accent)"/>
+<path d="M1367.0,764.0 L1386,764.0 L1386,84.0 L1367.0,84.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="1367.0" cy="764.0" r="2.2" fill="var(--accent)"/>
+<path d="M1367.0,684.0 L1380,684.0 L1380,315.0 L1367.0,315.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="1367.0" cy="684.0" r="2.2" fill="var(--accent)"/>
+<path d="M1367.0,315.0 L1374,315.0 L1374,142.0 L1367.0,142.0" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2.5 2.5" marker-end="url(#ah)"/>
+<circle cx="1367.0" cy="315.0" r="2.2" fill="var(--accent)"/>
+<rect x="183.0" y="91.0" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="275.0" y="110.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Edits shows, weights &amp;</text>
+<text x="275.0" y="123.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">deep-read cap in Settings</text>
+<rect x="1183.0" y="62.0" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="1275.0" y="81.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Reads Monday brief: book ·</text>
+<text x="1275.0" y="94.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">ride/counter · pitch</text>
+<rect x="1183.0" y="120.0" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="1275.0" y="139.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Browses dashboard by date</text>
+<text x="1275.0" y="152.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">(As sent / Explore)</text>
+<rect x="183.0" y="200.0" width="184" height="57" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="275.0" y="219.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Daily 5:30 AM IST run;</text>
+<text x="275.0" y="232.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Monday run also sends the</text>
+<text x="275.0" y="245.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">brief</text>
+<rect x="433.0" y="293.0" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="525.0" y="312.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Run orchestrator: one job</text>
+<text x="525.0" y="325.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">per show, 3 at a time</text>
+<rect x="933.0" y="293.0" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="1025.0" y="312.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">score(): gates, weights,</text>
+<text x="1025.0" y="325.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">New / Rising / Repeat</text>
+<rect x="1183.0" y="293.0" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="1275.0" y="312.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Dashboard, archive &amp; run</text>
+<text x="1275.0" y="325.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">log on public URL</text>
+<rect x="433.0" y="379.5" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="525.0" y="398.9" text-anchor="middle" font-size="10.5" fill="var(--ink)">10 India + 5 global shows:</text>
+<text x="525.0" y="411.9" text-anchor="middle" font-size="10.5" fill="var(--ink)">titles, show notes, links</text>
+<rect x="683.0" y="373.0" width="184" height="57" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="775.0" y="392.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Public YouTube video</text>
+<text x="775.0" y="405.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">matched to each India</text>
+<text x="775.0" y="418.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">episode</text>
+<rect x="683.0" y="495.0" width="184" height="44" rx="2" fill="var(--gfill)" stroke="var(--accent)" stroke-width="1.4"/>
+<text x="775.0" y="514.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Episode extractor: guests,</text>
+<text x="775.0" y="527.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">topics + stance, brands</text>
+<rect x="683.0" y="553.0" width="184" height="44" rx="2" fill="var(--gfill)" stroke="var(--accent)" stroke-width="1.4"/>
+<text x="775.0" y="572.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Sponsor deep-read: spoken</text>
+<text x="775.0" y="585.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">reads + timestamps</text>
+<rect x="933.0" y="466.0" width="184" height="44" rx="2" fill="var(--gfill)" stroke="var(--accent)" stroke-width="1.4"/>
+<text x="1025.0" y="485.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Entity resolver: merges</text>
+<text x="1025.0" y="498.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">name &amp; theme variants</text>
+<rect x="933.0" y="524.0" width="184" height="44" rx="2" fill="var(--gfill)" stroke="var(--accent)" stroke-width="1.4"/>
+<text x="1025.0" y="543.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Link finder: LinkedIn +</text>
+<text x="1025.0" y="556.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">site via Google Search</text>
+<rect x="933.0" y="582.0" width="184" height="44" rx="2" fill="var(--gfill)" stroke="var(--accent)" stroke-width="1.4"/>
+<text x="1025.0" y="601.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Brief writer: why now +</text>
+<text x="1025.0" y="614.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">India angle, fact-checked</text>
+<rect x="433.0" y="662.0" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="525.0" y="681.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Stores shows, weights &amp;</text>
+<text x="525.0" y="694.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">settings</text>
+<rect x="683.0" y="662.0" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="775.0" y="681.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Stores episodes, people,</text>
+<text x="775.0" y="694.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">topics, brands &amp; mentions</text>
+<rect x="1183.0" y="662.0" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="1275.0" y="681.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Stores every brief as sent</text>
+<text x="1275.0" y="694.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">+ run log &amp; spend</text>
+<rect x="1183.0" y="742.0" width="184" height="44" rx="2" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+<text x="1275.0" y="761.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Emails the brief every</text>
+<text x="1275.0" y="774.4" text-anchor="middle" font-size="10.5" fill="var(--ink)">Monday before 7:30 AM IST</text>
+</svg>
+    </div>
+    <div class="legend"><span><i class="g"></i>Gemini Flash (5 AI steps)</span><span><i></i>Infrastructure, data and delivery</span><span>Dotted arrows show data moving between components</span></div>
+  </section>
+
+  <section class="card">
+    <h2>How a Monday run works</h2>
+    <ol class="steps">
+      <li><b>Trigger.</b> Vercel Cron calls <code>/api/run?mode=weekly</code> at 5:30 AM IST (daily runs refresh the dashboard the same way, without email).</li>
+      <li><b>Read config.</b> The orchestrator loads the active shows and weights Aditya set in Settings. No code or redeploy needed.</li>
+      <li><b>Fetch.</b> One job per show pulls live RSS or YouTube-channel feeds: the last 30 days for India, 14 days for global. Episodes already stored are skipped.</li>
+      <li><b>Extract.</b> Gemini Flash reads titles and show notes and returns guests, topics with stance, and brands, each with a short evidence quote.</li>
+      <li><b>Deep-read.</b> For India episodes with a public YouTube video, Gemini Flash watches it at low resolution and lists spoken sponsor reads with timestamps.</li>
+      <li><b>Resolve.</b> Gemini Flash merges name variants of people, themes and brands. Duplicates are linked, never deleted.</li>
+      <li><b>Score.</b> <code>score(from, to, weights)</code> applies the gates and weights and tags each item New, Rising or Repeat against last week.</li>
+      <li><b>Find links.</b> Gemini Flash with Google Search grounding finds LinkedIn and company sites for shortlisted guests, and keeps only URLs from search results.</li>
+      <li><b>Write and deliver.</b> Gemini Flash writes the "why now" lines from each item's own sources (fact-checked in code). The brief is stored, emailed through Resend and shown on the dashboard.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2>Component inventory</h2>
+    <div class="tablebox"><table>
+      <thead><tr><th>#</th><th>Component</th><th>Tool</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td class="n">1</td><td>Settings dashboard</td><td><span class="tag">Next.js + Supabase</span></td><td>Password-protected page to add, edit and switch shows (India / global / own), edit weights, the guest gate and the video deep-read cap; shows estimated spend</td></tr>
+        <tr><td class="n">2</td><td>Scheduler</td><td><span class="tag">Vercel Cron</span></td><td>Daily 5:30 AM IST refresh; Monday 5:30 AM IST run also sends the brief (lands by ~6:35)</td></tr>
+        <tr><td class="n">3</td><td>Run orchestrator</td><td><span class="tag">Next.js API route</span></td><td>One ingest job per show, 3 at a time; up to 2 video deep-reads in parallel; a failed show is logged and named in the brief</td></tr>
+        <tr><td class="n">4</td><td>Feed fetcher</td><td><span class="tag">rss-parser</span></td><td>Live RSS and YouTube channel feeds; links each India episode to its public YouTube video</td></tr>
+        <tr><td class="n">5</td><td>Episode extractor</td><td><span class="tag g">Gemini Flash</span></td><td>Structured JSON (validated with zod): guests, topics + stance, brands + paid/organic, each with an evidence quote</td></tr>
+        <tr><td class="n">6</td><td>Sponsor deep-read</td><td><span class="tag g">Gemini Flash</span></td><td>YouTube URL at low media resolution; spoken sponsor reads with timestamps; minute cap set in Settings</td></tr>
+        <tr><td class="n">7</td><td>Entity resolver</td><td><span class="tag g">Gemini Flash</span></td><td>Maps new names onto canonical people, topics and brands; groups topic themes</td></tr>
+        <tr><td class="n">8</td><td>Link finder</td><td><span class="tag g">Gemini Flash + Search</span></td><td>LinkedIn and company site from grounded search results only; otherwise a "Search on LinkedIn" link</td></tr>
+        <tr><td class="n">9</td><td>Store</td><td><span class="tag">Supabase Postgres</span></td><td>Permanent history: shows, weights, settings, episodes, entities, mentions, briefs, runs (with token usage)</td></tr>
+        <tr><td class="n">10</td><td>Scoring engine</td><td><span class="tag">TypeScript score()</span></td><td>Gates, weighted scores out of 100, New / Rising / Repeat; one function for daily, weekly and history views</td></tr>
+        <tr><td class="n">11</td><td>Brief writer</td><td><span class="tag g">Gemini Flash</span></td><td>"Why now" lines and India angles using only each item's sources; rejected and retried if it names anything else</td></tr>
+        <tr><td class="n">12</td><td>Delivery</td><td><span class="tag">Resend + dashboard</span></td><td>Monday email; dashboard with date filter (As sent / Explore), archive and run log</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <h2>How the problem statement is met</h2>
+    <div class="tablebox"><table>
+      <thead><tr><th>Requirement</th><th>How it is met</th><th>Components</th></tr></thead>
+      <tbody>
+        <tr><td>Live external data</td><td>Real RSS feeds and public YouTube videos fetched every morning; 8 weeks backfilled</td><td>2, 4, 6</td></tr>
+        <tr><td>Gemini Flash for all AI; no Claude API</td><td>Extraction, deep-read, name merging, link finding and brief writing all call Gemini Flash; an automated test fails if the other vendor's SDK or API appears in the repo</td><td>5, 6, 7, 8, 11</td></tr>
+        <tr><td>Deployed on Vercel</td><td>App, API routes and crons on Vercel; public URL and public GitHub repo</td><td>2, 3, 12</td></tr>
+        <tr><td>10 shows, configurable without code</td><td>Settings page with add / edit / switch-off and a live feed check; changes apply on the next run</td><td>1</td></tr>
+        <tr><td>Guests on multiple shows in the same month</td><td>30-day cross-show count; a "Doing media rounds" block lists every guest on 2+ India shows, and "Book this week" ranks founders who are ahead of the curve</td><td>7, 10</td></tr>
+        <tr><td>Topics across shows</td><td>Weekly show count, acceleration vs the 4-week average, ride / counter tag, plus global signals not yet covered in India</td><td>10</td></tr>
+        <tr><td>Brands mentioned or promoted</td><td>Show notes plus spoken reads, tagged paid or organic, with timestamped links</td><td>5, 6, 10</td></tr>
+        <tr><td>Brief every Monday morning</td><td>Monday 5:30 AM IST cron; email via Resend, arriving before 7:30 AM IST</td><td>2, 12</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
