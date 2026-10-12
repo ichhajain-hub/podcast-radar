@@ -119,3 +119,16 @@ describe("media rounds", () => {
     expect(r.stats.guests_on_media_rounds).toBe(1);
   });
 });
+
+describe("media rounds over a long range", () => {
+  it("counts the whole selected range, but only pairs of shows within 30 days of each other", () => {
+    const long = new Date(to.getTime() - 60 * DAY);
+    const d = data(
+      [m("near", "guest", "s1", 40), m("near", "guest", "s2", 27), m("far", "guest", "s1", 55), m("far", "guest", "s3", 5)],
+      [ent("near", "guest", "Thirteen Days Apart", 3), ent("far", "guest", "Fifty Days Apart", 3)],
+    );
+    const r = score(long, to, DEFAULT_WEIGHTS, d, { guestMinShows: 1 });
+    expect(r.media_rounds?.map((g) => g.name)).toEqual(["Thirteen Days Apart"]);
+    expect(r.guests.map((g) => g.name).sort()).toEqual(["Fifty Days Apart", "Thirteen Days Apart"]);
+  });
+});

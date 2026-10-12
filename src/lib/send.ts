@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { buildBrief, type BriefContent } from "./brief";
 import { addDays, istMonday } from "./dates";
 import { renderBriefHtml } from "./email";
+import { briefRecipients } from "./settings";
 import { db } from "./supabase";
 import { writeBrief } from "./writer";
 
@@ -11,11 +12,16 @@ export function subjectFor(c: Pick<BriefContent, "guests" | "topics" | "sponsors
 
 async function deliver(subject: string, html: string): Promise<string> {
   const key = process.env.RESEND_API_KEY;
-  const to = process.env.BRIEF_RECIPIENT_EMAIL;
+  const to = await briefRecipients();
   const from = process.env.BRIEF_FROM_EMAIL ?? "Podcast Radar <onboarding@resend.dev>";
-  if (!key || !to) throw new Error("RESEND_API_KEY / BRIEF_RECIPIENT_EMAIL not set");
+  if (!key || !to) throw new Error("No email address set. Add one under Email in Settings.");
   const { data, error } = await new Resend(key).emails.send({ from, to: to.split(",").map((s) => s.trim()), subject, html });
-  if (error) throw new Error(`Resend: ${error.message}`);
+  if (error) {
+    const hint = /only send testing emails|verify a domain/i.test(error.message)
+      ? " Resend's free plan only delivers to the address the Resend account was created with, unless a domain is verified at resend.com/domains."
+      : "";
+    throw new Error(`Resend: ${error.message}${hint}`);
+  }
   return data?.id ?? "";
 }
 

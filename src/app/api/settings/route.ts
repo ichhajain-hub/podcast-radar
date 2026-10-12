@@ -12,6 +12,10 @@ const body = z.object({
   price_input_per_1m: z.number().min(0).max(100).optional(),
   price_output_per_1m: z.number().min(0).max(100).optional(),
   guest_min_shows: z.number().int().min(1).max(5).optional(),
+  brief_recipient_email: z.string().trim()
+    .refine((v) => v.split(",").map((x) => x.trim()).filter(Boolean).length >= 1 && v.split(",").map((x) => x.trim()).filter(Boolean).length <= 5, "Enter 1 to 5 email addresses, separated by commas.")
+    .refine((v) => v.split(",").map((x) => x.trim()).filter(Boolean).every((x) => z.email().safeParse(x).success), "That doesn't look like a valid email address.")
+    .optional(),
 });
 
 // Saves weights (each group must total 100) and deep-read / pricing settings. Admin only.
@@ -30,6 +34,9 @@ export async function PUT(req: Request) {
     const rows = Object.entries(weights).filter(([k]) => k in DEFAULT_WEIGHTS).map(([key, value]) => ({ key, value, updated_at: new Date().toISOString() }));
     const { error } = await db().from("weights").upsert(rows);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  if (b.brief_recipient_email !== undefined) {
+    await setSetting("brief_recipient_email", b.brief_recipient_email.split(",").map((x) => x.trim()).filter(Boolean).join(", "));
   }
   for (const k of ["deep_read_max_minutes", "price_input_per_1m", "price_output_per_1m", "guest_min_shows"] as const) {
     if (b[k] !== undefined) await setSetting(k, b[k]);

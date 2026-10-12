@@ -91,11 +91,15 @@ Open `/settings` and enter the admin password. You stay signed in for 7 days (ht
 - **Scoring weights**: one number per component, grouped, with a live "total = 100" check and **Reset to defaults**,
   plus the **Guest gate** (minimum India shows in 30 days for "Book this week").
 - **YouTube deep-read & spend**: max minutes per video (0 = full video), Gemini prices per 1M tokens, and estimated spend this week and this month.
-- **Run**: **Run now** (15-minute cooldown, to protect Gemini spend), **Send test email**, and the time of the last run.
+- **Run**: **Run now** (15-minute cooldown, to protect Gemini spend), **Send test email**, the time of the last run, and
+  **Email the brief to** (1–5 addresses; overrides `BRIEF_RECIPIENT_EMAIL`).
 
 ---
 
 ## Scoring rubric (default weights; each group totals 100)
+
+**Media rounds** = a guest on 2+ different India shows within 30 days of each other. For a weekly brief the guest window is
+the last 30 days; for a longer date range in Explore it is the whole range.
 
 **Guests: booking score.** Gate: on N+ distinct India shows in 30 days (spec default N = 2; **set to 1 in this deployment**, editable in Settings as "Guest gate"); not a host of a monitored show; not on the own show in the last 12 months.
 - Spread 40: 1 show = 10, 2 = 20, 3 = 30, 4+ = 40

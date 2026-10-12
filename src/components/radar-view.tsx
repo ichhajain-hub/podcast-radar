@@ -48,7 +48,7 @@ export function RadarView({ content, full = false, earlyNote }: { content: Radar
         {guests.map((g, i) => (
           <Item key={g.entity_id} rank={i + 1} item={g} title={g.name}
             subtitle={[g.role, g.company].filter(Boolean).join(", ")}
-            badge={g.shows.length >= 2 ? <Badge tone="amber">Media rounds</Badge> : undefined}
+            badge={(g.media_rounds ?? g.shows.length >= 2) ? <Badge tone="amber">Media rounds</Badge> : undefined}
             meta={`${g.shows.length} show${g.shows.length === 1 ? "" : "s"} (${g.shows.join(", ")}) · ${g.appearances} appearance${g.appearances === 1 ? "" : "s"}`}
             links={[
               g.linkedin_url ? { href: g.linkedin_url, label: g.linkedin_verified ? "LinkedIn" : "Search on LinkedIn" } : linkedinSearch(g),
@@ -96,11 +96,11 @@ export function RadarView({ content, full = false, earlyNote }: { content: Radar
 
 /** True multi-show guests. Older stored briefs lack media_rounds, so derive it from their guests. */
 function mediaRoundsCount(c: RadarContent): number {
-  return c.media_rounds ? c.stats.guests_on_media_rounds : c.guests.filter((g) => g.shows.length >= 2).length;
+  return c.media_rounds ? c.stats.guests_on_media_rounds : c.guests.filter((g) => g.media_rounds ?? g.shows.length >= 2).length;
 }
 
 function MediaRounds({ content }: { content: RadarContent }) {
-  const list = content.media_rounds ?? content.guests.filter((g) => g.shows.length >= 2);
+  const list = content.media_rounds ?? content.guests.filter((g) => g.media_rounds ?? g.shows.length >= 2);
   return (
     <div className="p-5">
       <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Doing media rounds · 2+ India shows in 30 days</h3>

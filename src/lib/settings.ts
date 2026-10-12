@@ -18,3 +18,9 @@ export async function setSetting(key: string, value: unknown) {
   const { error } = await db().from("settings").upsert({ key, value, updated_at: new Date().toISOString() });
   if (error) throw new Error(error.message);
 }
+
+/** Where the Monday brief goes: the Settings value, else the BRIEF_RECIPIENT_EMAIL env var. */
+export async function briefRecipients(): Promise<string> {
+  const v = await getSetting<string | null>("brief_recipient_email", null);
+  return (typeof v === "string" && v.trim()) || process.env.BRIEF_RECIPIENT_EMAIL || "";
+}

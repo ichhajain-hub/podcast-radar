@@ -56,6 +56,8 @@ type Base = {
   shows: string[];
 };
 export type GuestItem = Base & {
+  /** On 2+ India shows within 30 days of each other (the problem statement's media rounds). */
+  media_rounds?: boolean;
   company: string | null;
   role: string | null;
   appearances: number;
@@ -153,15 +155,19 @@ export function score(from: Date, to: Date, weights: Weights, data: ScoringData,
 
     if (e.type === "guest") {
       const gm = all.filter((m) => m.kind === "guest");
-      const in30 = gm.filter((m) => within(m, T - 30 * DAY, T) && region(m) === "india");
+      // The guest window is the last 30 days, or the whole selected range when that is longer.
+      const gStart = Math.min(F, T - 30 * DAY);
+      const in30 = gm.filter((m) => within(m, gStart, T) && region(m) === "india");
       const shows = distinctShows(in30);
       if (shows.size < guestMinShows) continue;
+      // Media rounds: two appearances on different India shows within 30 days of each other.
+      const onRounds = in30.some((a) => in30.some((b) => a.episode.show_id !== b.episode.show_id && Math.abs(t(a) - t(b)) <= 30 * DAY));
       if (hostNames.has(normName(e.canonical_name))) continue;
       if (gm.some((m) => region(m) === "own" && within(m, T - 365 * DAY, T))) continue;
 
       const eps = new Set(in30.map((m) => m.episode.id));
       const recentEps = new Set(in30.filter((m) => within(m, T - 14 * DAY, T)).map((m) => m.episode.id));
-      const before = new Set(gm.filter((m) => t(m) < T - 30 * DAY).map((m) => m.episode.id)).size;
+      const before = new Set(gm.filter((m) => t(m) < gStart).map((m) => m.episode.id)).size;
       const spreadPts = Math.min(shows.size, 4) * 10; // 1 = 10, 2 = 20, 3 = 30, 4+ = 40
       const c = {
         guest_spread: r1((w.guest_spread * spreadPts) / 40),
@@ -171,7 +177,7 @@ export function score(from: Date, to: Date, weights: Weights, data: ScoringData,
       };
       guests.push({
         entity_id: entityId, name: e.canonical_name, score: r1(sum(c)), components: c,
-        sources: sourcesOf(gm.filter((m) => within(m, T - 30 * DAY, T))), shows: showNames(shows),
+        sources: sourcesOf(gm.filter((m) => within(m, gStart, T))), shows: showNames(shows), media_rounds: onRounds,
         company: e.company, role: e.role, appearances: eps.size,
         linkedin_url: e.linkedin_url, linkedin_verified: !!e.linkedin_verified, website_url: e.website_url,
         fit_pending: e.fit == null,
@@ -252,7 +258,7 @@ export function score(from: Date, to: Date, weights: Weights, data: ScoringData,
 
   const windowShows = new Set(data.windowEpisodes.map((e) => e.show_id));
   const rankedGuests = rank(guests);
-  const mediaRounds = rankedGuests.filter((g) => g.shows.length >= 2);
+  const mediaRounds = rankedGuests.filter((g) => g.media_rounds);
   const rankedSponsors = rank(sponsors);
   return {
     from: from.toISOString(),

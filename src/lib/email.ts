@@ -56,7 +56,7 @@ export function renderBriefHtml(c: BriefContent, appUrl = process.env.APP_URL ??
       }).join("")
     : empty("");
 
-  const rounds = c.media_rounds ?? c.guests.filter((g) => g.shows.length >= 2);
+  const rounds = c.media_rounds ?? c.guests.filter((g) => g.media_rounds ?? g.shows.length >= 2);
   const roundsBlock = `<h3 style="margin:22px 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:${MUTED}">Doing media rounds · 2+ India shows in 30 days</h3>` + (rounds.length
     ? rounds.map((g) => `<div style="font-size:14px;margin:4px 0"><b>${esc(g.name)}</b>${g.company ? ` · ${esc(g.company)}` : ""} — ${esc(g.shows.join(" + "))} ${g.sources.map((s) => link(s.url, `[${fmtDay(s.published_at)}]`)).join(" ")}</div>`).join("")
     : `<p style="color:${MUTED};font-size:14px;margin:0">No guest appeared on two or more monitored India shows in the last 30 days.</p>`);

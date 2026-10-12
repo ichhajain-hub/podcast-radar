@@ -4,8 +4,19 @@ import { formatIST } from "@/lib/format";
 
 type Run = { id: string; started_at: string; finished_at: string | null; status: string | null; mode: string | null };
 
-export function RunPanel({ lastRun }: { lastRun: Run | null }) {
+export function RunPanel({ lastRun, recipient }: { lastRun: Run | null; recipient: string }) {
   const [msg, setMsg] = useState<string | null>(null);
+  const [email, setEmail] = useState(recipient);
+  const [saved, setSaved] = useState(recipient);
+  const [emailMsg, setEmailMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function saveEmail() {
+    setEmailMsg(null);
+    const res = await fetch("/api/settings", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ brief_recipient_email: email }) });
+    const body = await res.json();
+    if (res.ok) setSaved(email.split(",").map((x) => x.trim()).filter(Boolean).join(", "));
+    setEmailMsg(res.ok ? { ok: true, text: "Saved. The Monday brief and test emails go here now." } : { ok: false, text: body.error });
+  }
   const [busy, setBusy] = useState(false);
   const [mailBusy, setMailBusy] = useState(false);
 
@@ -15,7 +26,7 @@ export function RunPanel({ lastRun }: { lastRun: Run | null }) {
     const res = await fetch("/api/brief", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ test: true }) });
     const body = await res.json();
     setMailBusy(false);
-    setMsg(res.ok ? `Test email sent: “${body.subject}”. Check your inbox (and spam).` : body.error);
+    setMsg(res.ok ? `Test email sent to ${saved}: “${body.subject}”. Check the inbox (and spam).` : body.error);
   }
 
   async function runNow() {
@@ -50,6 +61,24 @@ export function RunPanel({ lastRun }: { lastRun: Run | null }) {
         </div>
       </div>
       {msg && <p className="mt-3 text-sm text-slate-700">{msg}</p>}
+      <div className="mt-6 border-t border-slate-200 pt-5">
+        <label htmlFor="brief-email" className="text-sm font-medium">Email the brief to</label>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <input
+            id="brief-email" type="text" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@example.com, another@example.com"
+            className="w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+          />
+          <button onClick={saveEmail} disabled={!email.trim() || email === saved} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
+            Save email
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-slate-500">
+          Up to 5 addresses, separated by commas. Use “Send test email” to check delivery. On Resend&apos;s free plan, mail is only delivered to
+          the address the Resend account was created with, unless you verify a domain at resend.com/domains.
+        </p>
+        {emailMsg && <p className={`mt-2 text-sm ${emailMsg.ok ? "text-emerald-700" : "text-red-600"}`}>{emailMsg.text}</p>}
+      </div>
     </section>
   );
 }
