@@ -1,6 +1,6 @@
 import { buildBrief } from "./brief";
 import { addDays, istDayStart, istMonday } from "./dates";
-import { consolidateSince } from "./entities";
+import { clusterTopics, consolidateSince } from "./entities";
 import { rateMissingFits } from "./fit";
 import { fetchStatus, ingestShow, type IngestResult } from "./ingest";
 import { kickAndWait } from "./internal";
@@ -102,6 +102,7 @@ export async function finalizeRun(runId: string) {
   const notes: Record<string, unknown> = {};
   try {
     notes.merged = await consolidateSince(run.started_at, runId);
+    notes.topics_grouped = await clusterTopics(runId);
     const now = new Date();
     // Rate fit for anything that could appear on the dashboard or in this Monday's brief.
     const lastWeek = istDayStart(addDays(istMonday(now), -7));

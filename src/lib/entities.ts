@@ -85,6 +85,12 @@ export class EntityResolver {
     return rows;
   }
 
+  /** Existing canonical labels (most-merged first), so extraction can reuse them. */
+  async knownLabels(type: EntityType, limit = 400): Promise<string[]> {
+    const rows = await this.rows(type);
+    return [...rows].sort((a, b) => (b.aliases?.length ?? 0) - (a.aliases?.length ?? 0)).slice(0, limit).map((r) => r.canonical_name);
+  }
+
   private findExact(rows: EntityRow[], name: string): EntityRow | undefined {
     const n = normName(name);
     return rows.find((r) => normName(r.canonical_name) === n || (r.aliases ?? []).some((a) => normName(a) === n));
@@ -212,6 +218,53 @@ export async function consolidateSince(since: string, runId: string | null) {
         await db().from("entities").update({ aliases }).eq("id", target.id);
         target.aliases = aliases;
         merged[type]++;
+      }
+    }
+  }
+  return merged;
+}
+
+const clusterSchema = z.object({ groups: z.array(z.object({ members: z.array(z.string()) })) });
+
+/**
+ * Topic theme pass: groups root topic labels that a newsletter editor would file under one
+ * heading, and links each group to its most-used label via merged_into (nothing is deleted).
+ */
+export async function clusterTopics(runId: string | null): Promise<number> {
+  const roots = await selectAll<EntityRow>((a, b) =>
+    db().from("entities").select(COLS).eq("type", "topic").is("merged_into", null).order("id").range(a, b),
+  );
+  if (roots.length < 2) return 0;
+  const counts = new Map<string, number>();
+  const ments = await selectAll<{ entity_id: string }>((a, b) => db().from("mentions").select("entity_id").eq("kind", "topic").order("id").range(a, b));
+  for (const m of ments) counts.set(m.entity_id, (counts.get(m.entity_id) ?? 0) + 1);
+  const byNorm = new Map(roots.map((r) => [normName(r.canonical_name), r]));
+
+  let merged = 0;
+  for (let i = 0; i < roots.length; i += 600) {
+    const chunk = roots.slice(i, i + 600);
+    const out = await generateJson({
+      task: "cluster_topics", runId, schema: clusterSchema, note: `${chunk.length} topic labels`,
+      prompt: `These are topic labels extracted from Indian and global business podcasts.
+Group labels that describe the same theme — the ones a newsletter editor would file under one heading.
+Examples of one theme: "ai agents for smbs" / "ai agents for small business" / "smb ai automation"; "quick commerce unit economics" / "q-commerce profitability" / "10-minute delivery economics".
+Do NOT group merely adjacent themes ("ai in healthcare" vs "ai in education", "ipo market" vs "venture capital").
+Copy labels exactly. Only return groups with 2 or more members; leave unique labels out.
+
+${chunk.map((r) => `- ${r.canonical_name}`).join("\n")}`,
+    });
+    for (const g of out.groups) {
+      const members = [...new Set(g.members.map((m) => byNorm.get(normName(m))).filter((r): r is EntityRow => !!r))];
+      if (members.length < 2) continue;
+      members.sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0) || a.canonical_name.length - b.canonical_name.length);
+      const [target, ...rest] = members;
+      const aliases = [...new Set([...(target.aliases ?? []), ...rest.flatMap((r) => [r.canonical_name, ...(r.aliases ?? [])])])];
+      await db().from("entities").update({ aliases }).eq("id", target.id);
+      target.aliases = aliases;
+      for (const r of rest) {
+        await db().from("entities").update({ merged_into: target.id }).eq("id", r.id);
+        byNorm.delete(normName(r.canonical_name));
+        merged++;
       }
     }
   }

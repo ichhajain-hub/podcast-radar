@@ -46,7 +46,7 @@ const topicsOnlySchema = z.object({
   episodes: z.array(z.object({ episode_index: z.number().int(), topics: z.array(topic) })),
 });
 
-function buildPrompt(show: ShowRow, eps: EpisodeForExtraction[], topicsOnly: boolean): string {
+function buildPrompt(show: ShowRow, eps: EpisodeForExtraction[], topicsOnly: boolean, known: string[]): string {
   const hosts = (show.hosts ?? []).filter(Boolean);
   const list = eps
     .map((e, i) => `### episode_index ${i}\nTitle: ${e.title}\nURL: ${e.url}\nShow notes:\n${(e.description ?? "").slice(0, 3500)}`)
@@ -67,7 +67,7 @@ Evidence must be a short phrase (max 15 words) copied from the show notes.
 
 ${asks}
 
-Return one entry per episode, using its episode_index.
+${known.length ? `Topic labels already in use (reuse one when it fits the episode; otherwise write a new label at the same level of detail):\n${known.join("; ")}\n\n` : ""}Return one entry per episode, using its episode_index.
 
 ${list}`;
 }
@@ -81,7 +81,7 @@ export async function extractBatch(
 ): Promise<{ guests: number; topics: number; brands: number }> {
   const topicsOnly = show.region === "global";
   const counts = { guests: 0, topics: 0, brands: 0 };
-  const prompt = buildPrompt(show, eps, topicsOnly);
+  const prompt = buildPrompt(show, eps, topicsOnly, await resolver.knownLabels("topic"));
   const note = `${show.name}: ${eps.length} eps`;
 
   type Out = { episode_index: number; guests?: z.infer<typeof guest>[]; topics: z.infer<typeof topic>[]; brands?: z.infer<typeof brand>[] };

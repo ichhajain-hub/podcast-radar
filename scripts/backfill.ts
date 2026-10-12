@@ -6,7 +6,7 @@
 
 import { buildBrief, type Writer } from "../src/lib/brief";
 import { addDays, istDayStart, istMonday } from "../src/lib/dates";
-import { consolidateSince } from "../src/lib/entities";
+import { clusterTopics, consolidateSince } from "../src/lib/entities";
 import type { ShowRow } from "../src/lib/extract";
 import { rateMissingFits } from "../src/lib/fit";
 import { ingestShow } from "../src/lib/ingest";
@@ -59,6 +59,9 @@ export async function backfill(hooks: Hooks = {}) {
     };
     await Promise.all([worker(), worker(), worker()]);
     console.log("Merging duplicate names…", await consolidateSince(run.started_at, run.id));
+  }
+  if (!arg("--no-cluster")) {
+    console.log("Grouping topic themes…", await clusterTopics(run.id), "labels merged");
   }
 
   for (let k = WEEKS; k >= 1; k--) {
