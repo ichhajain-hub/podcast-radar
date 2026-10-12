@@ -68,7 +68,8 @@ export async function runPipeline(runId: string) {
   await Promise.all(Array.from({ length: CONCURRENCY }, ingestWorker));
 
   // Sponsor deep-reads: max 2 in parallel (spec 5.4); unfinished ones retry on the next run.
-  const videos = await deepReadQueue(new Date(Date.now() - 30 * 864e5).toISOString());
+  // Only recent videos (14 days) are deep-read, to keep Gemini spend predictable.
+  const videos = await deepReadQueue(new Date(Date.now() - 14 * 864e5).toISOString());
   const deep: DeepReadResult[] = [];
   const deepWorker = async () => {
     for (let id = videos.shift(); id; id = videos.shift()) {
