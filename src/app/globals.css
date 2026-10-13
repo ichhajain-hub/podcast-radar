@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-/* Dark "control room" theme: near-black canvas, layered panels, violet→magenta accent, mint for good news. */
+/* Two themes. Dark "control room" (default): near-black canvas, layered panels, violet→magenta accent,
+   mint for good news. Light: soft lavender-white canvas with the same accent, deepened for contrast.
+   The toggle sets data-theme on <html>; the choice is remembered in localStorage. */
 :root {
   --canvas: #08080b;
   --panel: #111116;
@@ -12,7 +14,28 @@
   --violet: #a855f7;
   --magenta: #d946ef;
   --mint: #34d399;
+  --warn: #fcd34d;
+  --bad: #fb7185;
+  --glow-a: 0.16;
+  --glow-b: 0.10;
   color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --canvas: #f5f4fa;
+  --panel: #ffffff;
+  --panel-2: #f2f0f8;
+  --line: #e4e1ee;
+  --fg: #17151f;
+  --muted: #5e5b6e;
+  --dim: #8a879a;
+  --violet: #9333ea;
+  --magenta: #c026d3;
+  --mint: #059669;
+  --warn: #b45309;
+  --bad: #e11d48;
+  --glow-a: 0.10;
+  --glow-b: 0.06;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -26,6 +49,8 @@
   --color-violet: var(--violet);
   --color-magenta: var(--magenta);
   --color-mint: var(--mint);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -39,13 +64,13 @@ body {
 /* Soft violet glow behind the app, like light leaking from the top of the screen. */
 .glow {
   background:
-    radial-gradient(900px 420px at 18% -8%, rgb(168 85 247 / 0.16), transparent 70%),
-    radial-gradient(700px 380px at 92% -10%, rgb(217 70 239 / 0.10), transparent 70%),
+    radial-gradient(900px 420px at 18% -8%, rgb(168 85 247 / var(--glow-a)), transparent 70%),
+    radial-gradient(700px 380px at 92% -10%, rgb(217 70 239 / var(--glow-b)), transparent 70%),
     var(--canvas);
 }
 
 .accent-gradient { background-image: linear-gradient(135deg, var(--violet), var(--magenta)); }
 
-input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+:root:not([data-theme="light"]) input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

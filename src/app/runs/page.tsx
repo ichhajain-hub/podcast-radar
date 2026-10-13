@@ -53,10 +53,10 @@ export default async function RunsPage() {
                 <tr key={r.id} className="align-top">
                   <td className="p-3">{formatIST(r.started_at)}<div className="text-xs text-muted">{r.log?.trigger ?? ""}</div></td>
                   <td className="p-3">{r.mode ?? "—"}</td>
-                  <td className="p-3"><span className={r.status === "ok" ? "text-mint" : r.status === "running" || r.status === "finalizing" ? "text-violet" : "text-amber-300"}>{r.status}</span></td>
+                  <td className="p-3"><span className={r.status === "ok" ? "text-mint" : r.status === "running" || r.status === "finalizing" ? "text-violet" : "text-warn"}>{r.status}</span></td>
                   <td className="p-3">
                     {r.shows_ok.length} ok{r.shows_failed.length ? `, ${r.shows_failed.length} failed` : ""}{r.total ? ` of ${r.total}` : ""}
-                    {errors.map((s, i) => <div key={i} className="text-xs text-rose-400">{s.show}: {s.error}</div>)}
+                    {errors.map((s, i) => <div key={i} className="text-xs text-bad">{s.show}: {s.error}</div>)}
                   </td>
                   <td className="p-3">{secs == null ? "—" : secs >= 60 ? `${Math.floor(secs / 60)}m ${secs % 60}s` : `${secs}s`}</td>
                   <td className="p-3">{dr.length ? `${dr.filter((d) => d.ok).length}/${dr.length} ok` : "—"}{r.log?.deep_read_queue_left ? <div className="text-xs text-muted">{r.log.deep_read_queue_left} queued</div> : null}</td>

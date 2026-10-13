@@ -54,7 +54,7 @@ export function WeightsPanel({ initial, defaults, groups, guestMinShows }: { ini
             <div key={g.title} className="rounded-xl bg-panel2 p-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-medium">{g.title}</h3>
-                <span className={`text-sm tabular-nums ${ok ? "text-mint" : "text-rose-400"}`}>total = {totals[g.title]}{ok ? " ✓" : " (must be 100)"}</span>
+                <span className={`text-sm tabular-nums ${ok ? "text-mint" : "text-bad"}`}>total = {totals[g.title]}{ok ? " ✓" : " (must be 100)"}</span>
               </div>
               <div className="mt-3 space-y-2">
                 {g.keys.map((k) => (
@@ -72,7 +72,7 @@ export function WeightsPanel({ initial, defaults, groups, guestMinShows }: { ini
           );
         })}
       </div>
-      {msg && <p className={`mt-4 text-sm ${msg.ok ? "text-mint" : "text-rose-400"}`}>{msg.text}</p>}
+      {msg && <p className={`mt-4 text-sm ${msg.ok ? "text-mint" : "text-bad"}`}>{msg.text}</p>}
     </section>
   );
 }

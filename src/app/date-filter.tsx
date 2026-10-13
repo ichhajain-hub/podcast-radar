@@ -34,7 +34,7 @@ export function DateFilter(props: { preset: Preset | null; from: string; to: str
   const go = (q: { preset: Preset; from: string; to: string }) => router.push(`/?preset=${q.preset}&from=${q.from}&to=${q.to}`);
 
   const btn = (active: boolean) =>
-    `rounded-lg px-3 py-1.5 text-sm font-medium transition ${active ? "bg-panel2 text-fg ring-1 ring-inset ring-violet/40" : "text-muted ring-1 ring-inset ring-line hover:bg-white/5 hover:text-fg"}`;
+    `rounded-lg px-3 py-1.5 text-sm font-medium transition ${active ? "bg-panel2 text-fg ring-1 ring-inset ring-violet/40" : "text-muted ring-1 ring-inset ring-line hover:bg-fg/5 hover:text-fg"}`;
 
   return (
     <div>

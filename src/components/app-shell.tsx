@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { addDays, istMonday } from "@/lib/dates";
+import { ThemeToggle } from "./theme-toggle";
 
 // App frame: left sidebar (collapses to a top bar on phones), top status bar, content area.
 
@@ -23,7 +24,7 @@ export function AppShell({ active, status, children }: { active: NavKey; status?
         <nav className="mt-6 flex flex-col gap-1">
           {NAV.map((n) => (
             <Link key={n.key} href={n.href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${active === n.key ? "bg-panel2 text-fg ring-1 ring-inset ring-line" : "text-muted hover:bg-white/5 hover:text-fg"}`}>
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${active === n.key ? "bg-panel2 text-fg ring-1 ring-inset ring-line" : "text-muted hover:bg-fg/5 hover:text-fg"}`}>
               <span className={active === n.key ? "text-violet" : ""}>{n.icon}</span>{n.label}
             </Link>
           ))}
@@ -42,6 +43,7 @@ export function AppShell({ active, status, children }: { active: NavKey; status?
         {/* Phone/tablet: compact top bar instead of the sidebar */}
         <div className="flex items-center justify-between gap-3 border-b border-line bg-panel/80 px-4 py-3 backdrop-blur lg:hidden">
           <Brand />
+          <ThemeToggle />
         </div>
         <nav className="flex gap-1 overflow-x-auto border-b border-line px-3 py-2 lg:hidden">
           {NAV.map((n) => (
@@ -55,6 +57,7 @@ export function AppShell({ active, status, children }: { active: NavKey; status?
             {status ?? "Live data from 15 podcast feeds"}
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <a href="https://github.com/ichhajain-hub/podcast-radar" target="_blank" rel="noreferrer" className="rounded-lg border border-line p-2 text-muted hover:text-fg" title="GitHub repository"><IconCode /></a>
             <div className="flex items-center gap-2.5 rounded-xl border border-line px-2.5 py-1.5">
               <span className="flex h-7 w-7 items-center justify-center rounded-full accent-gradient text-xs font-bold text-white">A</span>

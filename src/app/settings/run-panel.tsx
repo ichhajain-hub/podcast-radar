@@ -77,7 +77,7 @@ export function RunPanel({ lastRun, recipient }: { lastRun: Run | null; recipien
           Up to 5 addresses, separated by commas. Use “Send test email” to check delivery. On Resend&apos;s free plan, mail is only delivered to
           the address the Resend account was created with, unless you verify a domain at resend.com/domains.
         </p>
-        {emailMsg && <p className={`mt-2 text-sm ${emailMsg.ok ? "text-mint" : "text-rose-400"}`}>{emailMsg.text}</p>}
+        {emailMsg && <p className={`mt-2 text-sm ${emailMsg.ok ? "text-mint" : "text-bad"}`}>{emailMsg.text}</p>}
       </div>
     </section>
   );

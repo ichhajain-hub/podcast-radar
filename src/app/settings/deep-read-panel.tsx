@@ -41,7 +41,7 @@ export function DeepReadPanel(props: { maxMinutes: number; priceIn: number; pric
           </label>
           <p className="text-xs text-muted">≈ ${((max || 180) * 60 * 100 * pin / 1e6).toFixed(2)} per video at this cap.</p>
           <button onClick={save} className="rounded-lg accent-gradient px-4 py-2 font-medium text-white hover:brightness-110">Save</button>
-          {msg && <p className={msg.ok ? "text-mint" : "text-rose-400"}>{msg.text}</p>}
+          {msg && <p className={msg.ok ? "text-mint" : "text-bad"}>{msg.text}</p>}
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="rounded-xl bg-panel2 p-4">

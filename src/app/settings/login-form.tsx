@@ -22,7 +22,7 @@ export function LoginForm() {
         type="password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password"
         className="w-full rounded-lg border border-line bg-panel2 text-fg px-4 py-3 outline-none focus:border-violet focus:ring-2 focus:ring-violet/20"
       />
-      {error && <p className="text-sm text-rose-400">{error}</p>}
+      {error && <p className="text-sm text-bad">{error}</p>}
       <button disabled={busy || !password} className="w-full rounded-lg accent-gradient px-4 py-3 font-medium text-white hover:brightness-110 disabled:opacity-50">
         {busy ? "Checking…" : "Sign in"}
       </button>

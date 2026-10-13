@@ -106,7 +106,7 @@ export function ShowsPanel({ initial }: { initial: Show[] }) {
           </button>
           <button onClick={onCancel} className="rounded-md px-3 py-1.5 text-sm text-muted hover:bg-panel/5">Cancel</button>
         </div>
-        {notice?.id === key && !notice.ok && <p className="mt-2 text-sm text-rose-400">{notice.text}</p>}
+        {notice?.id === key && !notice.ok && <p className="mt-2 text-sm text-bad">{notice.text}</p>}
       </td>
     </tr>
   );
@@ -121,7 +121,7 @@ export function ShowsPanel({ initial }: { initial: Show[] }) {
             <span className="text-dim"> (active shows)</span>
           </p>
           {counts.india !== 10 && (
-            <p className="mt-2 rounded-md bg-amber-400/10 px-3 py-2 text-sm text-amber-300">
+            <p className="mt-2 rounded-md bg-amber-400/10 px-3 py-2 text-sm text-warn">
               Heads up: the radar is designed for exactly 10 active India shows (you have {counts.india}). Runs still work.
             </p>
           )}
@@ -154,7 +154,7 @@ export function ShowsPanel({ initial }: { initial: Show[] }) {
                     {!!s.hosts?.length && <div className="text-xs text-muted">Host: {s.hosts.join(", ")}</div>}
                     <div className="mt-1 flex gap-3 text-xs">
                       <button onClick={() => { setEditing(s.id); setAdding(false); setDraft(toDraft(s)); }} className="text-violet hover:underline">Edit</button>
-                      <button onClick={() => remove(s)} className="text-muted hover:text-rose-400">Delete</button>
+                      <button onClick={() => remove(s)} className="text-muted hover:text-bad">Delete</button>
                     </div>
                   </td>
                   <td className="max-w-xs p-3 align-top">
@@ -171,8 +171,8 @@ export function ShowsPanel({ initial }: { initial: Show[] }) {
                     </button>
                   </td>
                   <td className="max-w-xs p-3 align-top text-xs">
-                    <span className={s.last_fetch_status?.startsWith("error") ? "text-rose-400" : "text-muted"}>{s.last_fetch_status ?? "—"}</span>
-                    {notice?.id === s.id && <p className={`mt-1 ${notice.ok ? "text-mint" : "text-rose-400"}`}>{notice.text}</p>}
+                    <span className={s.last_fetch_status?.startsWith("error") ? "text-bad" : "text-muted"}>{s.last_fetch_status ?? "—"}</span>
+                    {notice?.id === s.id && <p className={`mt-1 ${notice.ok ? "text-mint" : "text-bad"}`}>{notice.text}</p>}
                   </td>
                 </tr>
               ),
