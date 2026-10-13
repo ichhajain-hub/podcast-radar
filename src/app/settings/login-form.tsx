@@ -20,13 +20,13 @@ export function LoginForm() {
     <form onSubmit={submit} className="mt-8 space-y-4">
       <input
         type="password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password"
-        className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+        className="w-full rounded-lg border border-line bg-panel2 text-fg px-4 py-3 outline-none focus:border-violet focus:ring-2 focus:ring-violet/20"
       />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button disabled={busy || !password} className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
+      {error && <p className="text-sm text-rose-400">{error}</p>}
+      <button disabled={busy || !password} className="w-full rounded-lg accent-gradient px-4 py-3 font-medium text-white hover:brightness-110 disabled:opacity-50">
         {busy ? "Checking…" : "Sign in"}
       </button>
-      <p className="text-xs text-slate-500">You stay signed in on this browser for 7 days.</p>
+      <p className="text-xs text-muted">You stay signed in on this browser for 7 days.</p>
     </form>
   );
 }

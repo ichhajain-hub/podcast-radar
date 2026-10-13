@@ -37,7 +37,75 @@ export async function channelVideos(id: string): Promise<Video[]> {
       }
     } catch { /* try the next feed */ }
   }
+  if (!out.size) for (const v of await channelPageVideos(id)) out.set(v.id, v);
   return [...out.values()];
+}
+
+/**
+ * Fallback when YouTube's RSS feeds are down (they intermittently return 404): read the channel's
+ * public /videos page. Dates there are relative ("5 days ago"), so they are approximate.
+ */
+export async function channelPageVideos(id: string, withDescriptions = false, sinceMs = 0): Promise<(Video & { description?: string })[]> {
+  const html = await fetch(`https://www.youtube.com/channel/${id}/videos`, { headers: BROWSER, signal: AbortSignal.timeout(25_000) }).then((r) => (r.ok ? r.text() : ""));
+  const data = initialData(html, "ytInitialData");
+  if (!data) return [];
+  const vids: (Video & { description?: string })[] = [];
+  for (const l of findAll(data, "lockupViewModel")) {
+    const vid = l.contentId as string | undefined;
+    const md = (l.metadata as Record<string, Record<string, unknown>> | undefined)?.lockupMetadataViewModel;
+    const title = (md?.title as { content?: string } | undefined)?.content;
+    if (!vid || !title || l.contentType !== "LOCKUP_CONTENT_TYPE_VIDEO") continue;
+    const labels = JSON.stringify(md?.metadata ?? {}).match(/"accessibilityLabel":"([^"]*ago)"/g) ?? [];
+    const ago = labels.map((x) => x.slice(21, -1)).find((x) => /ago$/.test(x));
+    vids.push({ id: vid, title, published: ago ? relativeToMs(ago) : null });
+  }
+  if (withDescriptions) {
+    const wanted = vids.filter((v) => (v.published ?? 0) >= sinceMs).slice(0, 15);
+    await Promise.all(wanted.map(async (v) => {
+      try {
+        const page = await fetch(`https://www.youtube.com/watch?v=${v.id}`, { headers: BROWSER, signal: AbortSignal.timeout(15_000) }).then((r) => r.text());
+        const player = initialData(page, "ytInitialPlayerResponse") as { videoDetails?: { shortDescription?: string } } | null;
+        v.description = player?.videoDetails?.shortDescription ?? "";
+        const date = page.match(/"(?:uploadDate|publishDate)":"([^"]+)"/)?.[1];
+        if (date && !Number.isNaN(Date.parse(date))) v.published = Date.parse(date);
+      } catch { /* keep the title-only entry */ }
+    }));
+  }
+  return vids;
+}
+
+const BROWSER = { "accept-language": "en", "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36" };
+
+function initialData(html: string, name: string): Record<string, unknown> | null {
+  const start = html.indexOf(`${name} = {`);
+  if (start < 0) return null;
+  const from = html.indexOf("{", start);
+  const end = html.indexOf("};", from);
+  for (let e = end; e > 0 && e < html.length; e = html.indexOf("};", e + 1)) {
+    try {
+      return JSON.parse(html.slice(from, e + 1));
+    } catch { /* the object ends at a later "};" */ }
+    if (e - from > 5_000_000) break;
+  }
+  return null;
+}
+
+function findAll(o: unknown, key: string, out: Record<string, unknown>[] = []): Record<string, unknown>[] {
+  if (Array.isArray(o)) for (const v of o) findAll(v, key, out);
+  else if (o && typeof o === "object") {
+    for (const [k, v] of Object.entries(o)) {
+      if (k === key && v && typeof v === "object") out.push(v as Record<string, unknown>);
+      else findAll(v, key, out);
+    }
+  }
+  return out;
+}
+
+function relativeToMs(text: string): number | null {
+  const m = text.match(/(\d+)\s+(second|minute|hour|day|week|month|year)/);
+  if (!m) return null;
+  const unit = { second: 1e3, minute: 6e4, hour: 36e5, day: DAY, week: 7 * DAY, month: 30 * DAY, year: 365 * DAY }[m[2] as "day"];
+  return Date.now() - Number(m[1]) * unit;
 }
 
 function decode(s: string) {

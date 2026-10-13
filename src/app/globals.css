@@ -1,19 +1,51 @@
 @import "tailwindcss";
 
+/* Dark "control room" theme: near-black canvas, layered panels, violet→magenta accent, mint for good news. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --canvas: #08080b;
+  --panel: #111116;
+  --panel-2: #17171d;
+  --line: #24242d;
+  --fg: #ededf3;
+  --muted: #9a9aa8;
+  --dim: #61616e;
+  --violet: #a855f7;
+  --magenta: #d946ef;
+  --mint: #34d399;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-panel2: var(--panel-2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-dim: var(--dim);
+  --color-violet: var(--violet);
+  --color-magenta: var(--magenta);
+  --color-mint: var(--mint);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--canvas);
+  color: var(--fg);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/* Soft violet glow behind the app, like light leaking from the top of the screen. */
+.glow {
+  background:
+    radial-gradient(900px 420px at 18% -8%, rgb(168 85 247 / 0.16), transparent 70%),
+    radial-gradient(700px 380px at 92% -10%, rgb(217 70 239 / 0.10), transparent 70%),
+    var(--canvas);
+}
+
+.accent-gradient { background-image: linear-gradient(135deg, var(--violet), var(--magenta)); }
+
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

@@ -37,3 +37,26 @@ export async function latestBriefWeek(): Promise<string | null> {
 }
 
 export const weekEnd = (weekStart: string) => addDays(weekStart, 7);
+
+export type WeekCount = { week: string; india: number; global: number };
+
+/** Episodes published per IST week (India vs global, active shows), for the 8 weeks ending at `endWeek` (exclusive). */
+export async function weeklyEpisodeCounts(endWeek: string, weeks = 8): Promise<WeekCount[]> {
+  const start = addDays(endWeek, -7 * weeks);
+  const { data } = await db().from("episodes").select("published_at, shows!inner(region, active)")
+    .eq("shows.active", true).gte("published_at", istDayStart(start).toISOString()).lt("published_at", istDayStart(endWeek).toISOString())
+    .limit(5000);
+  const out: WeekCount[] = Array.from({ length: weeks }, (_, i) => ({ week: addDays(start, 7 * i), india: 0, global: 0 }));
+  for (const e of data ?? []) {
+    const idx = Math.floor((Date.parse(e.published_at) - istDayStart(start).getTime()) / (7 * 864e5));
+    const region = (e.shows as unknown as { region: string }).region;
+    if (out[idx] && (region === "india" || region === "global")) out[idx][region]++;
+  }
+  return out;
+}
+
+/** The stored brief for the week before `weekStart`, for week-over-week change badges. */
+export async function previousBrief(weekStart: string): Promise<BriefContent | null> {
+  const { data } = await db().from("briefs").select("content_json").eq("week_start", addDays(weekStart, -7)).maybeSingle();
+  return (data?.content_json as BriefContent) ?? null;
+}

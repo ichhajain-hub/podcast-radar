@@ -28,42 +28,42 @@ export function WeightsPanel({ initial, defaults, groups, guestMinShows }: { ini
   }
 
   return (
-    <section className="mt-10 rounded-2xl border border-slate-200 p-6">
+    <section className="mt-10 rounded-2xl border border-line bg-panel p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Scoring weights</h2>
-          <p className="mt-1 text-sm text-slate-600">Each group must total 100. Changes apply immediately to Explore and to the next run.</p>
+          <p className="mt-1 text-sm text-muted">Each group must total 100. Changes apply immediately to Explore and to the next run.</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => save(true)} disabled={busy} className="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">Reset to defaults</button>
-          <button onClick={() => save()} disabled={busy || !allOk} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">Save weights</button>
+          <button onClick={() => save(true)} disabled={busy} className="rounded-lg px-4 py-2 text-sm text-muted hover:bg-panel/5">Reset to defaults</button>
+          <button onClick={() => save()} disabled={busy || !allOk} className="rounded-lg accent-gradient px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50">Save weights</button>
         </div>
       </div>
-      <label className="mt-5 flex flex-wrap items-center gap-3 rounded-xl bg-indigo-50/60 p-4 text-sm">
+      <label className="mt-5 flex flex-wrap items-center gap-3 rounded-xl bg-violet/10 p-4 text-sm">
         <span className="font-medium">Guest gate:</span> a guest must appear on at least
-        <select value={gate} onChange={(e) => setGate(Number(e.target.value))} className="rounded-md border border-slate-300 bg-white px-2 py-1">
+        <select value={gate} onChange={(e) => setGate(Number(e.target.value))} className="rounded-md border border-line bg-panel px-2 py-1">
           {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
         </select>
         India show{gate === 1 ? "" : "s"} in 30 days to appear in “Book this week”.
-        <span className="text-slate-500">Spec default is 2 (media rounds); 1 lists every recent guest, ranked.</span>
+        <span className="text-muted">Spec default is 2 (media rounds); 1 lists every recent guest, ranked.</span>
       </label>
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         {groups.map((g) => {
           const ok = Math.abs(totals[g.title] - 100) < 0.01;
           return (
-            <div key={g.title} className="rounded-xl bg-slate-50 p-4">
+            <div key={g.title} className="rounded-xl bg-panel2 p-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-medium">{g.title}</h3>
-                <span className={`text-sm tabular-nums ${ok ? "text-emerald-700" : "text-red-600"}`}>total = {totals[g.title]}{ok ? " ✓" : " (must be 100)"}</span>
+                <span className={`text-sm tabular-nums ${ok ? "text-mint" : "text-rose-400"}`}>total = {totals[g.title]}{ok ? " ✓" : " (must be 100)"}</span>
               </div>
               <div className="mt-3 space-y-2">
                 {g.keys.map((k) => (
                   <label key={k} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-slate-700">{LABELS[k] ?? k}</span>
+                    <span className="text-fg/80">{LABELS[k] ?? k}</span>
                     <input
                       type="number" min={0} max={100} step={1} value={w[k]}
                       onChange={(e) => setW({ ...w, [k]: e.target.value === "" ? 0 : Number(e.target.value) })}
-                      className="w-20 rounded-md border border-slate-300 px-2 py-1 text-right tabular-nums"
+                      className="w-20 rounded-md border border-line bg-panel2 text-fg px-2 py-1 text-right tabular-nums"
                     />
                   </label>
                 ))}
@@ -72,7 +72,7 @@ export function WeightsPanel({ initial, defaults, groups, guestMinShows }: { ini
           );
         })}
       </div>
-      {msg && <p className={`mt-4 text-sm ${msg.ok ? "text-emerald-700" : "text-red-600"}`}>{msg.text}</p>}
+      {msg && <p className={`mt-4 text-sm ${msg.ok ? "text-mint" : "text-rose-400"}`}>{msg.text}</p>}
     </section>
   );
 }

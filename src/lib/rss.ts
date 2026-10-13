@@ -1,5 +1,6 @@
 import Parser from "rss-parser";
 import { findYouTube, stripHtml } from "./text";
+import { channelPageVideos } from "./youtube";
 
 type RawItem = {
   title?: string;
@@ -34,6 +35,36 @@ export type FeedEpisode = {
  * videos) for shows that only publish on YouTube. Large feeds (e.g. 20VC, ~12 MB) get a long timeout.
  */
 export async function fetchFeed(url: string, timeoutMs = 90_000): Promise<{ title: string; episodes: FeedEpisode[] }> {
+  try {
+    return await fetchOne(url, timeoutMs);
+  } catch (e) {
+    // YouTube sometimes refuses the long-form uploads feed (playlist UULF…) to cloud servers;
+    // fall back to the channel's standard feed, which lists the same videos plus Shorts.
+    const m = url.match(/youtube\.com\/feeds\/videos\.xml\?(?:playlist_id=UULF|channel_id=UC)([\w-]{22})/);
+    if (!m) throw e;
+    try {
+      const feed = await fetchOne(`https://www.youtube.com/feeds/videos.xml?channel_id=UC${m[1]}`, timeoutMs);
+      return { ...feed, episodes: feed.episodes.filter((ep) => !/#shorts/i.test(ep.title)) };
+    } catch {
+      // Both feeds down: read the channel's public videos page (with each recent video's description).
+      const vids = await channelPageVideos(`UC${m[1]}`, true, Date.now() - 31 * 864e5);
+      if (!vids.length) throw e;
+      return {
+        title: "YouTube channel",
+        episodes: vids.filter((v) => v.published != null && !/#shorts/i.test(v.title)).map((v) => ({
+          title: v.title,
+          description: (v.description ?? "").slice(0, 6000),
+          url: `https://www.youtube.com/watch?v=${v.id}`,
+          published_at: new Date(v.published!).toISOString(),
+          youtube_url: `https://www.youtube.com/watch?v=${v.id}`,
+          audio_url: null,
+        })),
+      };
+    }
+  }
+}
+
+async function fetchOne(url: string, timeoutMs: number): Promise<{ title: string; episodes: FeedEpisode[] }> {
   const res = await fetch(url, {
     signal: AbortSignal.timeout(timeoutMs),
     redirect: "follow",
