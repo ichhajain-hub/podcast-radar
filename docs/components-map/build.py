@@ -6,7 +6,11 @@ Outputs (next to this file):
 Run: python3 docs/components-map/build.py
 """
 from pathlib import Path
+import os
 import textwrap
+
+# PRINT=1 renders a larger-text, light-only variant (map-print.svg) for the printable PDF.
+PRINT = os.environ.get("PRINT") == "1"
 
 COLS = ["TRIGGER", "INPUT", "CONTEXT", "PROCESSING", "OUTPUT"]
 LANES = [
@@ -50,10 +54,15 @@ EDGES = [
 # geometry
 LABEL_W, COL_W, HEAD_H = 150, 250, 44
 BOX_W, LINE_H, BOX_PAD, GAP, LANE_PAD = 184, 13, 9, 14, 18
+FONT_BOX, FONT_LANE, FONT_SUB, FONT_HEAD, WRAP = 10.5, 11.5, 10.5, 11, 27
+if PRINT:
+    LABEL_W, COL_W, HEAD_H = 132, 254, 40
+    BOX_W, LINE_H, BOX_PAD, GAP, LANE_PAD = 216, 15.5, 7, 10, 11
+    FONT_BOX, FONT_LANE, FONT_SUB, FONT_HEAD, WRAP = 13, 13, 11.5, 12.5, 27
 W = LABEL_W + COL_W * len(COLS)
 
 def wrap(t):
-    return textwrap.wrap(t, 27)
+    return textwrap.wrap(t, WRAP)
 
 def box_h(t):
     return len(wrap(t)) * LINE_H + BOX_PAD * 2
@@ -65,7 +74,7 @@ for n in NODES:
 lane_y, y = {}, HEAD_H
 for key, *_ in LANES:
     tallest = max([sum(box_h(n[3]) for n in cells.get((key, c), [])) + GAP * (len(cells.get((key, c), [])) - 1) for c in COLS] + [0])
-    h = max(78, tallest + LANE_PAD * 2)
+    h = max(62 if PRINT else 78, tallest + LANE_PAD * 2)
     lane_y[key] = (y, h)
     y += h
 H = y
@@ -99,9 +108,9 @@ def render(themed: bool) -> str:
     out.append(f'<line x1="{LABEL_W}" y1="{HEAD_H / 2}" x2="{W}" y2="{HEAD_H / 2}" stroke="{grid}" stroke-dasharray="2 3"/>')
     for i, col in enumerate(COLS):
         x = LABEL_W + i * COL_W
-        tw = len(col) * 8.6 + 18
+        tw = len(col) * (FONT_HEAD * 0.8) + 18
         out.append(f'<rect x="{x + COL_W / 2 - tw / 2}" y="{HEAD_H / 2 - 9}" width="{tw}" height="18" fill="{bg}"/>')
-        out.append(f'<text x="{x + COL_W / 2}" y="{HEAD_H / 2 + 4}" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1.2" fill="{ink}">{col}</text>')
+        out.append(f'<text x="{x + COL_W / 2}" y="{HEAD_H / 2 + 4}" text-anchor="middle" font-size="{FONT_HEAD}" font-weight="700" letter-spacing="1.2" fill="{ink}">{col}</text>')
         if i:
             out.append(f'<circle cx="{x}" cy="{HEAD_H / 2}" r="2.5" fill="{gline}"/>')
             out.append(f'<line x1="{x}" y1="{HEAD_H}" x2="{x}" y2="{H}" stroke="{grid}" stroke-width="1"/>')
@@ -111,8 +120,8 @@ def render(themed: bool) -> str:
     for key, name, sub in LANES:
         ly, lh = lane_y[key]
         out.append(f'<line x1="1" y1="{ly}" x2="{W - 1}" y2="{ly}" stroke="{line}" stroke-width="1"/>')
-        out.append(f'<text x="{LABEL_W / 2}" y="{ly + lh / 2 - 2}" text-anchor="middle" font-size="11.5" font-weight="700" letter-spacing=".5" fill="{ink}">{name}</text>')
-        out.append(f'<text x="{LABEL_W / 2}" y="{ly + lh / 2 + 13}" text-anchor="middle" font-size="10.5" fill="{mute}">{sub}</text>')
+        out.append(f'<text x="{LABEL_W / 2}" y="{ly + lh / 2 - 2}" text-anchor="middle" font-size="{FONT_LANE}" font-weight="700" letter-spacing=".5" fill="{ink}">{name}</text>')
+        out.append(f'<text x="{LABEL_W / 2}" y="{ly + lh / 2 + 13}" text-anchor="middle" font-size="{FONT_SUB}" fill="{mute}">{sub}</text>')
 
     # edges (drawn under boxes)
     gutter_count = {}
@@ -152,12 +161,16 @@ def render(themed: bool) -> str:
         for i, ln in enumerate(lines):
             ty = y0 + BOX_PAD + LINE_H * (i + 0.8)
             ln = ln.replace("&", "&amp;")
-            out.append(f'<text x="{x + w / 2}" y="{ty}" text-anchor="middle" font-size="10.5" fill="{ink}">{ln}</text>')
+            out.append(f'<text x="{x + w / 2}" y="{ty}" text-anchor="middle" font-size="{FONT_BOX}" fill="{ink}">{ln}</text>')
     out.append("</svg>")
     return "\n".join(out)
 
 
 here = Path(__file__).parent
-(here / "map.svg").write_text(render(True))
-(here / "map-light.svg").write_text(render(False))
-print(f"wrote map.svg and map-light.svg ({W}x{H})")
+if PRINT:
+    (here / "map-print.svg").write_text(render(False))
+    print(f"wrote map-print.svg ({W}x{H})")
+else:
+    (here / "map.svg").write_text(render(True))
+    (here / "map-light.svg").write_text(render(False))
+    print(f"wrote map.svg and map-light.svg ({W}x{H})")
